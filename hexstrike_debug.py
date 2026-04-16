@@ -45,6 +45,8 @@ import subprocess
 import sys
 import time
 import traceback
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -61,6 +63,8 @@ RESET = "\033[0m"
 # Resolved at runtime: disable colour when writing JSON or when stdout is not
 # a TTY (e.g. redirected to a file).
 _USE_COLOR = True
+# When True, suppress all per-check console output (JSON mode uses this).
+_QUIET = False
 
 def _c(code: str) -> str:
     """Return the ANSI code only when colour output is enabled."""
@@ -92,6 +96,8 @@ def _record(section: str, name: str, status: str, detail: str = "") -> Dict[str,
 # ---------------------------------------------------------------------------
 
 def _section(title: str) -> None:
+    if _QUIET:
+        return
     width = 62
     print(f"\n{_c(RED)}{_c(BOLD)}{'═' * width}{_c(RESET)}")
     print(f"{_c(RED)}{_c(BOLD)}  {title}{_c(RESET)}")
@@ -99,21 +105,29 @@ def _section(title: str) -> None:
 
 
 def _ok(name: str, detail: str = "") -> None:
+    if _QUIET:
+        return
     suffix = f"  {_c(CYAN)}{detail}{_c(RESET)}" if detail else ""
     print(f"  {_c(GREEN)}[✔]{_c(RESET)} {name}{suffix}")
 
 
 def _fail(name: str, detail: str = "") -> None:
+    if _QUIET:
+        return
     suffix = f"  {_c(YELLOW)}{detail}{_c(RESET)}" if detail else ""
     print(f"  {_c(RED)}[✘]{_c(RESET)} {name}{suffix}")
 
 
 def _warn(name: str, detail: str = "") -> None:
+    if _QUIET:
+        return
     suffix = f"  {_c(CYAN)}{detail}{_c(RESET)}" if detail else ""
     print(f"  {_c(YELLOW)}[!]{_c(RESET)} {name}{suffix}")
 
 
 def _info(name: str, detail: str = "") -> None:
+    if _QUIET:
+        return
     suffix = f"  {_c(CYAN)}{detail}{_c(RESET)}" if detail else ""
     print(f"  {_c(CYAN)}[*]{_c(RESET)} {name}{suffix}")
 
@@ -185,9 +199,9 @@ TOR_SOCKS_PORT = 9050
 
 # Patterns that suggest hardcoded secrets (simple heuristic)
 SECRET_PATTERNS = [
-    re.compile(r'(?i)(password|passwd|secret|api[_-]?key|token|auth[_-]?key)\s*=\s*["\'][^"\']{4,}["\']'),
-    re.compile(r'(?i)private[_-]?key\s*=\s*["\'][^"\']{4,}["\']'),
-    re.compile(r'(?i)(aws|gcp|azure)[_-]?(access|secret|key)\s*=\s*["\'][^"\']{4,}["\']'),
+    re.compile(r'(?i)(password|passwd|secret|api[_-]?key|token|auth[_-]?key)\s*=\s*["\'][^"\']{8,}["\']'),
+    re.compile(r'(?i)private[_-]?key\s*=\s*["\'][^"\']{8,}["\']'),
+    re.compile(r'(?i)(aws|gcp|azure)[_-]?(access|secret|key)\s*=\s*["\'][^"\']{8,}["\']'),
 ]
 
 
@@ -329,7 +343,11 @@ def check_module_imports(section: str) -> None:
             _check(section, f"Import {module_file}", False, "File not found")
             continue
         spec = importlib.util.spec_from_file_location(module_file, path)
-        loader = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+        if spec is None or spec.loader is None:
+            _check(section, f"Import {module_file}", False,
+                   "Could not create module spec from file location")
+            continue
+        loader = importlib.util.module_from_spec(spec)
         try:
             spec.loader.exec_module(loader)  # type: ignore[union-attr]
             _check(section, f"Import {module_file}", True)
@@ -436,9 +454,6 @@ def _probe_endpoint(section: str, base: str, path: str,
     Uses only the standard-library urllib so requests is not required at
     import time (it may not be installed in all environments).
     """
-    import urllib.request
-    import urllib.error
-
     url = base + path
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
@@ -570,8 +585,7 @@ def _check_system_resources(section: str) -> None:
     """Check disk space, RAM, and CPU count."""
     # Disk space (root filesystem, or SCRIPT_DIR's mount)
     try:
-        import shutil as _shutil
-        total, used, free = _shutil.disk_usage(str(SCRIPT_DIR))
+        total, used, free = shutil.disk_usage(str(SCRIPT_DIR))
         free_gb = free / (1024 ** 3)
         ok = free_gb >= 1.0
         _check(section, "Disk space ≥ 1 GB free", ok,
@@ -625,7 +639,7 @@ def _parse_requirements() -> List[str]:
             if not line:
                 continue
             # Strip version specifiers: pkg>=1.0,<2.0 -> pkg
-            pkg = re.split(r"[>=<!;\[\s]", line)[0].strip()
+            pkg = re.split(r"[><=!;\s\[]", line)[0].strip()
             if pkg:
                 packages.append(pkg.lower())
     except Exception:
@@ -764,6 +778,9 @@ def main() -> int:
     # Disable colour for JSON mode or non-TTY stdout
     if args.json or not sys.stdout.isatty():
         _USE_COLOR = False
+    if args.json:
+        global _QUIET
+        _QUIET = True
 
     if not args.json:
         _banner()
@@ -794,6 +811,7 @@ def main() -> int:
     if not args.json:
         _section("3 · Server Health & Functionality Testing")
     s = "server"
+    check_module_imports(s)
     check_syntax_all_py(s)
     if not args.skip_server:
         check_server_endpoints(s)
