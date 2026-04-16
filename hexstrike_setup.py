@@ -178,7 +178,7 @@ def log_section(title):
     print(f"{RED}{BOLD}{'═' * width}{RESET}\n")
 
 
-def run(cmd, check=True, capture=False, env=None):
+def run(cmd, check=True, capture=False, env=None, timeout=120):
     """Run a shell command with optional output capture."""
     merged_env = os.environ.copy()
     if env:
@@ -191,7 +191,7 @@ def run(cmd, check=True, capture=False, env=None):
             capture_output=capture,
             text=True,
             env=merged_env,
-            timeout=600,
+            timeout=timeout,
         )
         return result
     except subprocess.CalledProcessError as exc:
@@ -238,7 +238,6 @@ def check_platform():
 def install_apt_packages(packages, label="packages"):
     """Install a list of apt packages, skipping unavailable ones."""
     log_info(f"Installing {label} ({len(packages)} packages)...")
-    run("apt-get update -qq", check=False)
 
     failed = []
     for pkg in packages:
@@ -246,6 +245,7 @@ def install_apt_packages(packages, label="packages"):
             f"apt-get install -y -qq {pkg}",
             check=False,
             capture=True,
+            timeout=300,
         )
         if isinstance(result, subprocess.CalledProcessError) or result is None:
             failed.append(pkg)
@@ -387,13 +387,18 @@ def setup_tor():
     run("systemctl enable tor", check=False, capture=True)
     run("systemctl restart tor", check=False, capture=True)
 
-    # Wait briefly for Tor to bootstrap
+    # Wait for Tor to bootstrap with polling
     log_info("Waiting for Tor to bootstrap...")
-    time.sleep(5)
+    tor_ready = False
+    for attempt in range(6):
+        time.sleep(5)
+        result = run("systemctl is-active tor", check=False, capture=True, timeout=10)
+        if result and hasattr(result, "stdout") and "active" in result.stdout.strip():
+            tor_ready = True
+            break
+        log_info(f"  Bootstrap attempt {attempt + 1}/6...")
 
-    # Verify Tor is running
-    result = run("systemctl is-active tor", check=False, capture=True)
-    if result and hasattr(result, "stdout") and "active" in result.stdout.strip():
+    if tor_ready:
         log_ok("Tor service is active")
     else:
         log_warn("Tor service may not be running — check: systemctl status tor")
@@ -544,7 +549,7 @@ def verify_installation():
     checks = {
         "Python 3": ("python3 --version", None),
         "pip": (f"{VENV_DIR / 'bin' / 'pip'} --version", None),
-        "Flask (venv)": (f"{VENV_DIR / 'bin' / 'python'} -c \"import flask\"", None),
+        "flask (venv)": (f"{VENV_DIR / 'bin' / 'python'} -c \"import flask\"", None),
         "Nmap": ("nmap --version", "nmap"),
         "Gobuster": ("gobuster version", "gobuster"),
         "SQLMap": ("sqlmap --version", "sqlmap"),
@@ -621,30 +626,34 @@ def full_setup():
 
     check_platform()
 
-    # 1. Core system packages
+    # 1. Update package lists once
+    log_section("Updating Package Lists")
+    run("apt-get update -qq", check=False, timeout=120)
+
+    # 2. Core system packages
     log_section("Core System Packages")
     install_apt_packages(APT_CORE, label="core system packages")
 
-    # 2. Security tools via apt
+    # 3. Security tools via apt
     log_section("Security Tools (apt)")
     install_apt_packages(APT_SECURITY_TOOLS, label="security tools")
 
-    # 3. Python environment
+    # 4. Python environment
     setup_python_venv()
 
-    # 4. Go tools
+    # 5. Go tools
     install_go_tools()
 
-    # 5. RustScan
+    # 6. RustScan
     install_rustscan()
 
-    # 6. Tor & hidden service setup
+    # 7. Tor & hidden service setup
     setup_tor()
 
-    # 7. Results directory
+    # 8. Results directory
     create_results_directory()
 
-    # 8. Verify
+    # 9. Verify
     installed, missing = verify_installation()
 
     # Final summary
