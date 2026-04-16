@@ -50,6 +50,15 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+# psutil is an optional dependency; imported at module level so ImportError
+# is caught once rather than inside each function.
+try:
+    import psutil as _psutil
+    _PSUTIL_AVAILABLE = True
+except ImportError:
+    _psutil = None  # type: ignore[assignment]
+    _PSUTIL_AVAILABLE = False
+
 # ---------------------------------------------------------------------------
 # ANSI colour scheme (matches hexstrike_setup.py)
 # ---------------------------------------------------------------------------
@@ -241,7 +250,7 @@ def check_pip_packages(section: str, fix: bool) -> None:
                         [sys.executable, "-m", "pip", "install", pkg],
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
-                        timeout=120,
+                        timeout=60,
                     )
                     importlib.import_module(import_name)
                     _check(section, f"Package '{pkg}' importable (fixed)", True, import_name)
@@ -533,7 +542,9 @@ def check_production_readiness(section: str) -> None:
 
 def _check_debug_mode(section: str) -> None:
     """Grep for Flask debug=True in source files."""
-    debug_pattern = re.compile(r'\bapp\.run\s*\(.*\bdebug\s*=\s*True', re.IGNORECASE)
+    # re.DOTALL lets .* span newlines, catching multi-line app.run() calls.
+    debug_pattern = re.compile(r'\bapp\.run\s*\(.*\bdebug\s*=\s*True',
+                               re.IGNORECASE | re.DOTALL)
     found_debug = []
     for pyfile in SCRIPT_DIR.glob("*.py"):
         try:
@@ -594,20 +605,20 @@ def _check_system_resources(section: str) -> None:
         _check(section, "Disk space check", False, str(exc), warn_on_fail=True)
 
     # RAM
-    try:
-        import psutil as _psutil
-        vm = _psutil.virtual_memory()
-        total_gb = vm.total / (1024 ** 3)
-        avail_gb = vm.available / (1024 ** 3)
-        ok = avail_gb >= 0.5
-        _check(section, "Available RAM ≥ 512 MB", ok,
-               f"{avail_gb:.1f} GB available / {total_gb:.1f} GB total",
-               warn_on_fail=True)
-    except ImportError:
+    if not _PSUTIL_AVAILABLE:
         _warn("psutil not available — skipping RAM check")
         _record(section, "Available RAM check", Result.SKIP, "psutil not installed")
-    except Exception as exc:
-        _check(section, "RAM check", False, str(exc), warn_on_fail=True)
+    else:
+        try:
+            vm = _psutil.virtual_memory()  # type: ignore[union-attr]
+            total_gb = vm.total / (1024 ** 3)
+            avail_gb = vm.available / (1024 ** 3)
+            ok = avail_gb >= 0.5
+            _check(section, "Available RAM ≥ 512 MB", ok,
+                   f"{avail_gb:.1f} GB available / {total_gb:.1f} GB total",
+                   warn_on_fail=True)
+        except Exception as exc:
+            _check(section, "RAM check", False, str(exc), warn_on_fail=True)
 
     # CPU count
     try:
