@@ -110,7 +110,44 @@ graph TD
 
 ## Installation
 
-### Quick Setup to Run the hexstrike MCPs Server
+### Automated Setup (Kali Linux — Recommended)
+
+The `hexstrike_setup.py` script automates the entire setup process, including security tools, Python dependencies, and Tor/proxychains for hidden service pentesting:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/0x4m4/hexstrike-ai.git
+cd hexstrike-ai
+
+# 2. Run the automated setup (installs everything)
+sudo python3 hexstrike_setup.py
+
+# 3. Activate the environment and start the server
+source hexstrike-env/bin/activate
+python3 hexstrike_server.py
+```
+
+**Setup options:**
+```bash
+sudo python3 hexstrike_setup.py              # Full setup
+sudo python3 hexstrike_setup.py --verify      # Verify installation only
+sudo python3 hexstrike_setup.py --tor-only    # Setup Tor/proxychains only
+sudo python3 hexstrike_setup.py --tools-only  # Install security tools only
+```
+
+**Pentest hidden services (.onion):**
+```bash
+# Route HexStrike through Tor
+proxychains4 python3 hexstrike_server.py
+
+# Scan a hidden service
+proxychains4 nmap -sT -Pn -n <target>.onion
+
+# Web directory bruteforce via Tor
+proxychains4 gobuster dir -u http://<target>.onion -w /usr/share/wordlists/dirb/common.txt
+```
+
+### Manual Setup
 
 ```bash
 # 1. Clone the repository
