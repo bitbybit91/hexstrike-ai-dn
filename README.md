@@ -1,12 +1,12 @@
-<!-- HexStrike AI DN — VPS Edition README -->
+<!-- HexStrike AI DN — Ubuntu 20.04 VPS Edition -->
 <div align="center">
 
 <img src="assets/hexstrike-logo.png" alt="HexStrike AI Logo" width="220" style="margin-bottom: 20px;"/>
 
-# HexStrike AI DN — VPS Edition
-### Autonomous Pentesting via Telegram · Venice AI · Tor · 150+ Tools
+# HexStrike AI DN
+### Autonomous Pentesting via Telegram · Venice AI · Tor · Ubuntu 20.04 VPS
 
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/Security-Penetration%20Testing-red.svg)](https://github.com/bitbybit91/hexstrike-ai-dn)
 [![MCP](https://img.shields.io/badge/MCP-FastMCP-purple.svg)](https://github.com/bitbybit91/hexstrike-ai-dn)
@@ -14,342 +14,349 @@
 [![Tools](https://img.shields.io/badge/Security%20Tools-150%2B-brightgreen.svg)](https://github.com/bitbybit91/hexstrike-ai-dn)
 [![Tor](https://img.shields.io/badge/Network-Tor%20Anonymized-7D4698.svg)](https://www.torproject.org/)
 
-**Headless Linux VPS deployment · No GUI · No Claude Desktop · Telegram C2 only**
+**Ubuntu 20.04 LTS VPS · Headless / SSH-only · No GUI · Telegram C2 interface**
 
-[📋 Overview](#1-project-overview) • [⚙️ Prerequisites](#2-prerequisites) • [🖥️ VPS Setup](#3-vps-environment-setup-no-gui-required) • [🔧 Configuration](#4-configuration) • [🚀 Installation](#5-installation) • [🤖 Telegram Bot](#6-telegram-bot--command-reference) • [🧅 Tor Integration](#7-tor-integration) • [🏗️ Deployment](#8-build--deployment) • [🧪 Testing](#9-running-tests) • [🛠️ Troubleshooting](#10-common-issues--troubleshooting) • [📁 Structure](#11-project-structure)
+[�� Overview](#1-project-overview) • [⚙️ Prerequisites](#2-prerequisites) • [🖥️ VPS Setup](#3-vps-environment-setup-headless-no-physical-device) • [🤖 Telegram](#4-telegram-bot-setup) • [🧠 Venice AI](#5-venice-ai-configuration) • [🔧 Config](#6-configuration) • [🚀 Install](#7-installation) • [▶️ Run](#8-build--running) • [📟 Commands](#9-telegram-commands-reference) • [🧪 Tests](#10-running-tests) • [🛠️ Troubleshoot](#11-common-issues--troubleshooting) • [📁 Structure](#12-project-structure)
 
 </div>
 
 ---
 
-> **⚠️ Legal Notice:** HexStrike AI DN is designed exclusively for authorised penetration testing, red team engagements, CTF competitions, and security research on systems you own or have explicit written permission to test. Unauthorised use against systems you do not own is illegal. The authors accept no liability for misuse.
+> **⚠️ Legal Notice:** HexStrike AI DN is designed exclusively for authorised penetration testing, CTF competitions, red team engagements, and security research on systems you own or have explicit written permission to test. Unauthorised use against systems you do not own is illegal. The authors accept no liability for misuse.
 
 ---
 
 ## 1. Project Overview
 
-HexStrike AI DN is a **fully headless, VPS-native offensive security automation platform** that turns a bare Linux server into a persistent, Tor-anonymised pentesting agent controllable entirely through Telegram.
+HexStrike AI DN is an **MCP-based offensive security automation platform** that exposes 150+ security tool wrappers through a FastMCP server (`hexstrike_server.py`) and MCP client bridge (`hexstrike_mcp.py`). A **Venice AI abliterated model** acts as the autonomous reasoning engine — selecting tools, interpreting results, and chaining attack phases — while a **Telegram bot** serves as the sole command-and-control interface, allowing the operator to issue commands, receive output, and manage scans entirely through a private Telegram chat from any device.
 
-There is no web UI, no desktop application, and no interactive prompts. Every command is issued via Telegram message; every result is returned as a Telegram reply or file attachment. The underlying intelligence layer is provided by **Venice AI** using **abliterated (uncensored) LLM models** — meaning the AI can reason about offensive security tasks without the content-filtering restrictions present in mainstream models.
+All outbound network traffic — tool executions, API calls to Venice AI, and HTTP requests — is routed through **Tor** via `torsocks` and a SOCKS5 proxy, providing full operational anonymity without any desktop GUI or physical device.
 
 ### Key Features
 
 | Feature | Detail |
 |---------|--------|
-| **Telegram C2 interface** | Send commands, receive structured output, and trigger multi-tool chains from any device |
-| **Venice AI integration** | Abliterated models (`dolphin-2.9-llama3-70b`, `dolphin-mixtral-8x22b`, etc.) via the Venice AI API — no content filtering for security tasks |
-| **Full Tor anonymisation** | All outbound traffic — tool executions, API calls, HTTP requests — routed through Tor via `torsocks` / SOCKS5 proxy |
-| **150+ integrated tools** | Network scanning, web app testing, exploitation, OSINT, binary analysis, cloud auditing, password cracking, and more |
-| **Headless VPS-native** | No display server required; persistent via `systemd` or `tmux`; survives reboots and SSH disconnects |
-| **FastMCP architecture** | `hexstrike_server.py` (Flask REST API + tool handlers) + `hexstrike_mcp.py` (FastMCP bridge for LLM agents) |
-| **Autonomous chaining** | Venice AI selects and chains tools based on target analysis — no manual step-by-step required |
+| **Telegram C2 interface** | Issue scan commands and receive structured output through a private Telegram chat |
+| **Venice AI abliterated models** | Uncensored LLM reasoning for offensive security tasks — no content-policy refusals |
+| **Tor-anonymised execution** | All tool traffic and API calls routed through `127.0.0.1:9050` via `torsocks` / SOCKS5 |
+| **150+ security tool wrappers** | Network scanning, web app testing, exploitation, OSINT, binary analysis, password cracking |
+| **MCP server/client architecture** | `hexstrike_server.py` (Flask REST API) + `hexstrike_mcp.py` (FastMCP bridge for LLM agents) |
+| **Headless VPS-native** | No display server needed; persistent via `systemd` or `tmux` on Ubuntu 20.04 |
+| **Autonomous tool chaining** | Venice AI selects and sequences tools based on target analysis without manual intervention |
 
 ### Full Technology Stack
 
 | Component | Technology |
 |-----------|-----------|
-| Language | Python 3.11+ |
+| Language | Python 3.10+ |
 | API server | Flask 3.x |
 | MCP bridge | FastMCP 0.2+ |
-| LLM backend | Venice AI API (abliterated models) |
+| AI backend | Venice AI API — abliterated models |
 | C2 interface | python-telegram-bot v20+ |
-| Traffic anonymisation | Tor + torsocks + SOCKS5 proxy |
+| Anonymisation | Tor + torsocks + SOCKS5 (port 9050) |
 | Browser automation | Chromium (headless) + Selenium 4 + ChromeDriver |
 | HTTP proxy | mitmproxy 9+ |
 | Binary analysis | pwntools 4.10+, angr 9.2+ |
 | Async networking | aiohttp 3.8+ |
 | HTML parsing | BeautifulSoup4 |
 
-### Supported Operating Systems
+### Supported Environment
 
-| OS | Version |
-|----|---------|
-| Ubuntu | 22.04 LTS |
-| Debian | 12 (Bookworm) |
-| Kali Linux | 2024.1+ |
+| Property | Value |
+|----------|-------|
+| OS | Ubuntu 20.04 LTS |
+| Access | SSH only — no GUI, no physical device required |
+| Python | 3.10+ (installed via `deadsnakes` PPA) |
+| Network | All outbound traffic via Tor (optional bypass for lab use) |
 
 ---
 
 ## 2. Prerequisites
 
-Every prerequisite below must be present before beginning installation. Install them in the order listed.
+Install everything in the order listed. All commands are for **Ubuntu 20.04 LTS over SSH**.
 
-### 2.1 System Packages
-
-#### Python 3.11+
-
-**Ubuntu 22.04 / Debian 12:**
-```bash
-sudo apt update && sudo apt install -y python3.11 python3.11-venv python3.11-dev python3-pip
-python3.11 --version   # Expected: Python 3.11.x
-```
-
-**Kali Linux 2024.1+:**
-```bash
-sudo apt update && sudo apt install -y python3 python3-venv python3-pip
-python3 --version      # Expected: Python 3.11.x or higher
-```
-
-#### Git
+### 2.1 System Updates
 
 ```bash
-sudo apt install -y git
-git --version          # Expected: git version 2.x.x
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential software-properties-common
 ```
 
-#### Tor
+---
+
+### 2.2 Python 3.10 (via deadsnakes PPA)
+
+Ubuntu 20.04 ships with Python 3.8. Python 3.10 is required for full pwntools compatibility and all dependencies.
+
+```bash
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.10 python3.10-venv python3.10-dev
+python3.10 --version
+# Expected: Python 3.10.x
+```
+
+Install pip for Python 3.10:
+```bash
+curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+python3.10 -m pip --version
+# Expected: pip 24.x.x from ...python3.10/...
+```
+
+---
+
+### 2.3 Tor
 
 ```bash
 sudo apt install -y tor
-sudo systemctl enable tor && sudo systemctl start tor
-sudo systemctl status tor    # Expected: active (running)
+sudo systemctl enable tor
+sudo systemctl start tor
+sudo systemctl status tor
+# Expected: active (running)
+tor --version
+# Expected: Tor version 0.4.x.x.
 ```
 
-#### torsocks
+---
+
+### 2.4 torsocks
 
 ```bash
 sudo apt install -y torsocks
-torsocks --version     # Expected: torsocks version 2.x.x
+torsocks --version
+# Expected: torsocks version 2.x.x
 ```
 
-#### tmux (for persistent sessions)
+---
+
+### 2.5 tmux (persistent VPS sessions)
 
 ```bash
 sudo apt install -y tmux
-tmux -V                # Expected: tmux 3.x
-```
-
-#### UFW (firewall — Ubuntu/Debian only)
-
-```bash
-sudo apt install -y ufw
+tmux -V
+# Expected: tmux 3.x
 ```
 
 ---
 
-### 2.2 Venice AI API Key
+### 2.6 Telegram Bot Token
 
-Venice AI provides access to abliterated (uncensored) open-source LLM models via a standard OpenAI-compatible API.
+1. Open Telegram and search for **@BotFather**
+2. Send the message `/newbot`
+3. Enter a display name when prompted, e.g., `HexStrike Operator`
+4. Enter a username ending in `bot`, e.g., `hexstrike_op_bot`
+5. BotFather replies with your token in the format `123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ`
+6. Copy the token — store it as `TELEGRAM_BOT_TOKEN` in your `.env`
+
+Verify the token works:
+```bash
+curl -s "https://api.telegram.org/bot<YOUR_TOKEN>/getMe" | python3 -m json.tool
+# Expected: {"ok": true, "result": {"username": "hexstrike_op_bot", ...}}
+```
+
+---
+
+### 2.7 Telegram Chat ID
+
+Your Chat ID is the numeric identifier of your personal Telegram account. The bot will only respond to this ID.
+
+1. Send any message to your bot from your personal Telegram account
+2. Run:
+```bash
+curl -s "https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates" \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['message']['chat']['id'])"
+```
+3. The returned integer is your `TELEGRAM_ALLOWED_CHAT_ID`
+
+Alternatively, search for **@userinfobot** in Telegram and send it `/start` to see your numeric ID.
+
+---
+
+### 2.8 Venice AI API Key
 
 1. Open a browser and navigate to **https://venice.ai**
 2. Create an account or sign in
-3. Click your avatar → **API Keys** → **Create API Key**
-4. Copy the key — it is shown only once; store it securely
-5. Note your preferred abliterated model ID (see [Section 4a](#4a-venice-ai-abliterated-models))
+3. Click your profile avatar → **Settings** → **API Keys** → **Create API Key**
+4. Copy the key — it is displayed only once
+5. Store it as `VENICE_API_KEY` in your `.env`
 
-Verify the key works:
+Verify the key (run from the VPS through Tor once Tor is configured):
 ```bash
-curl -s https://api.venice.ai/api/v1/models \
-  -H "Authorization: Bearer YOUR_VENICE_API_KEY" | jq '.data[].id'
-```
-
-Expected output (sample):
-```
-"dolphin-2.9-llama3-70b"
-"dolphin-mixtral-8x22b"
-"dolphin-2.9.1-llama-3.1-8b"
-"nous-hermes-2-mixtral-8x7b-dpo"
-"llama-3.1-405b-akash"
+torsocks curl -s "https://api.venice.ai/api/v1/models" \
+  -H "Authorization: Bearer $VENICE_API_KEY" | python3 -m json.tool | grep '"id"'
 ```
 
 ---
 
-### 2.3 Telegram Bot Token
+### 2.9 External Security Tools (150+)
 
-1. Open Telegram and search for **@BotFather**
-2. Send `/newbot`
-3. Enter a display name, e.g., `HexStrike Operator`
-4. Enter a username ending in `bot`, e.g., `hexstrike_op_bot`
-5. BotFather replies with your token in the format `123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ`
-6. Copy and store this token — it is your `TELEGRAM_BOT_TOKEN`
-
-Verify the token:
+Run the provided installer script after cloning the repo:
 ```bash
-curl -s https://api.telegram.org/bot<YOUR_TOKEN>/getMe | jq '.result.username'
+bash scripts/install_tools.sh
 ```
 
-Expected output:
-```
-"hexstrike_op_bot"
-```
+Or install manually by category:
 
----
-
-### 2.4 Telegram Chat ID
-
-Your Chat ID is the numeric identifier of your personal Telegram account. The bot will reject all messages from any other Chat ID.
-
-1. Send any message to your new bot
-2. Run:
+**Network & Reconnaissance:**
 ```bash
-curl -s "https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates" | jq '.result[0].message.chat.id'
-```
-3. The returned integer is your `TELEGRAM_AUTHORIZED_CHAT_ID`
-
----
-
-### 2.5 Chrome/Chromium + ChromeDriver (Headless)
-
-**Ubuntu 22.04 / Debian 12:**
-```bash
-sudo apt install -y chromium-browser chromium-chromedriver
-chromium-browser --headless --no-sandbox --version
-# Expected: Chromium 1xx.x.xxxx.xxx
+sudo apt install -y nmap masscan whois dnsutils traceroute netcat-openbsd
 ```
 
-**Kali Linux:**
+**Go-based tools** (requires Go — installed by the script):
 ```bash
-sudo apt install -y chromium chromium-driver
-chromium --headless --no-sandbox --version
-```
-
----
-
-### 2.6 External Security Tools (150+)
-
-These are installed separately from the Python requirements. A complete automated install script is provided at `scripts/install_tools.sh`.
-
-**Kali Linux 2024.1+ (most tools are pre-installed):**
-```bash
-sudo apt update && sudo apt install -y \
-  nmap masscan rustscan amass subfinder theharvester fierce dnsenum \
-  gobuster feroxbuster ffuf dirb dirsearch nikto sqlmap wpscan \
-  hydra john hashcat medusa netexec enum4linux-ng evil-winrm \
-  radare2 gdb binwalk ropgadget checksec volatility3 \
-  steghide exiftool foremost scalpel testdisk photorec \
-  responder \
-  wafw00f whatweb nuclei httpx katana hakrawler gau \
-  recon-ng maltego shodan \
-  docker.io trivy
-```
-
-**Ubuntu 22.04 / Debian 12 (tools not in standard repos):**
-```bash
-# Install Go (required by many tools)
 sudo apt install -y golang-go
 export GOPATH="$HOME/go"
 export PATH="$PATH:$GOPATH/bin"
+echo 'export GOPATH="$HOME/go"' >> ~/.bashrc
+echo 'export PATH="$PATH:$GOPATH/bin"' >> ~/.bashrc
 
-# Go-based tools
-go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 go install github.com/projectdiscovery/httpx/cmd/httpx@latest
 go install github.com/projectdiscovery/katana/cmd/katana@latest
 go install github.com/owasp-amass/amass/v4/...@master
-go install github.com/hakluke/hakrawler@latest
-go install github.com/lc/gau/v2/cmd/gau@latest
 go install github.com/ffuf/ffuf/v2@latest
 go install github.com/OJ/gobuster/v3@latest
-
-# Rust-based tools
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source "$HOME/.cargo/env"
-cargo install rustscan
-
-# Feroxbuster
-curl -sL https://raw.githubusercontent.com/epi052/feroxbuster/main/install-nix.sh | bash
-
-# Python-based tools
-pip3 install dirsearch wpscan-python trufflesecurity checkov
-pip3 install shodan censys
-
-# Nuclei templates
+go install github.com/hakluke/hakrawler@latest
+go install github.com/lc/gau/v2/cmd/gau@latest
 nuclei -update-templates
+```
+
+**Web Application Testing:**
+```bash
+sudo apt install -y sqlmap nikto whatweb dirb
+pip3 install dirsearch wafw00f
+```
+
+**Password & Hash Tools:**
+```bash
+sudo apt install -y hydra john hashcat medusa
+```
+
+**Binary Analysis:**
+```bash
+sudo apt install -y binwalk gdb radare2 exiftool
+```
+
+**Forensics & OSINT:**
+```bash
+sudo apt install -y steghide foremost testdisk
+pip3 install shodan
+```
+
+**Container/Cloud:**
+```bash
+curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+```
+
+**Chromium (headless — for Selenium tools):**
+```bash
+sudo apt install -y chromium-browser chromium-chromedriver
+chromium-browser --headless --no-sandbox --version
+```
+
+Verify all tools after install:
+```bash
+bash scripts/tool_check.sh
 ```
 
 ---
 
-## 3. VPS Environment Setup (No GUI Required)
+## 3. VPS Environment Setup (Headless, No Physical Device)
 
-### 3.1 Provision a Fresh VPS
+### 3.1 Provision a VPS
 
-**DigitalOcean CLI (`doctl`):**
+Log in to your preferred provider and create an **Ubuntu 20.04 LTS** instance. Minimum recommended specs: 2 vCPU, 4 GB RAM, 40 GB SSD.
+
+**DigitalOcean (using `doctl`):**
 ```bash
-# Install doctl
-brew install doctl   # macOS  — or use the Linux binary
-doctl auth init      # Paste your DO API token
-
-# Create an Ubuntu 22.04 droplet (2 vCPU, 4 GB RAM recommended)
 doctl compute droplet create hexstrike-vps \
-  --image ubuntu-22-04-x64 \
+  --image ubuntu-20-04-x64 \
   --size s-2vcpu-4gb \
   --region nyc3 \
   --ssh-keys $(doctl compute ssh-key list --format ID --no-header | head -1) \
   --wait
 ```
 
-**Vultr CLI (`vultr-cli`):**
-```bash
-vultr-cli instance create \
-  --os 1743 \         # Ubuntu 22.04 LTS ID
-  --plan vc2-2c-4gb \
-  --region ewr \
-  --label hexstrike-vps
-```
-
-**Hetzner Cloud CLI (`hcloud`):**
+**Hetzner Cloud (using `hcloud`):**
 ```bash
 hcloud server create \
   --name hexstrike-vps \
   --type cx21 \
-  --image ubuntu-22.04 \
+  --image ubuntu-20.04 \
   --ssh-key ~/.ssh/id_rsa.pub
+```
+
+**Vultr / Linode:** Use the web console to create an Ubuntu 20.04 instance with your SSH public key.
+
+SSH into the new server:
+```bash
+ssh root@<VPS_IP>
 ```
 
 ---
 
-### 3.2 Initial Hardening
+### 3.2 Initial System Hardening
 
-Log in as root, then run the following:
+Run these commands as root immediately after first login:
 
 ```bash
-# 1. Create a non-root operator user
+# 1. Apply all security updates
+apt update && apt upgrade -y && apt autoremove -y
+
+# 2. Create a non-root operator user
 adduser hexstrike
 usermod -aG sudo hexstrike
 
-# 2. Copy SSH keys to the new user
+# 3. Copy your SSH public key to the new user
 rsync --archive --chown=hexstrike:hexstrike ~/.ssh /home/hexstrike
 
-# 3. Disable password authentication and root SSH login
+# 4. Disable password authentication and direct root login via SSH
 sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+sed -i 's/#PermitRootLogin/PermitRootLogin/' /etc/ssh/sshd_config
 systemctl reload sshd
 
-# 4. Enable UFW — allow only SSH and the MCP port
+# 5. Configure UFW — allow only SSH inbound; Tor SOCKS stays on loopback
 ufw allow OpenSSH
-ufw allow 8888/tcp comment 'HexStrike MCP (localhost only — change if needed)'
 ufw --force enable
 ufw status verbose
+# Expected: Status: active — 22/tcp ALLOW Anywhere
 ```
 
-> **Note:** Port 8888 is bound to `127.0.0.1` by default (`MCP_HOST=127.0.0.1` in `.env`), so exposing it via UFW is only required if you move it to a public interface. Keep it local unless you have a specific reason to expose it.
+From a **new terminal**, verify you can still SSH as the `hexstrike` user before closing the root session:
+```bash
+ssh hexstrike@<VPS_IP>
+```
+
+All remaining commands are run as `hexstrike` unless `sudo` is shown explicitly.
 
 ---
 
 ### 3.3 Install and Configure Tor
 
 ```bash
-sudo apt install -y tor
+sudo apt install -y tor torsocks
 ```
 
-Edit `/etc/tor/torrc` — add the following block:
-
-```ini
-# /etc/tor/torrc — HexStrike Tor configuration
-SocksPort 9050              # SOCKS5 proxy for Python requests and torsocks
-DNSPort 53                  # Tor-resolved DNS — prevents DNS leaks
-TransPort 9040              # Transparent proxy port (optional, for iptables redirect)
+Edit `/etc/tor/torrc` to ensure SOCKS5 is enabled on loopback:
+```bash
+sudo cp /etc/tor/torrc /etc/tor/torrc.backup
+sudo tee -a /etc/tor/torrc <<'EOF'
+# HexStrike Tor configuration
+SocksPort 127.0.0.1:9050
+DNSPort 127.0.0.1:53
 AutomapHostsOnResolve 1
 VirtualAddrNetworkIPv4 10.192.0.0/10
 Log notice file /var/log/tor/notices.log
-```
-
-Restart and verify:
-```bash
+EOF
 sudo systemctl restart tor
 sudo systemctl enable tor
-# Confirm Tor is routing traffic
-torsocks curl -s https://check.torproject.org/api/ip
+```
+
+Verify Tor is routing traffic:
+```bash
+curl --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip
 ```
 
 Expected output:
@@ -357,140 +364,398 @@ Expected output:
 {"IsTor":true,"IP":"185.220.xxx.xxx"}
 ```
 
----
-
-### 3.4 Install Chromium in Headless Mode
-
-No display server (X11/Wayland) is required for headless Chromium.
-
-**Ubuntu 22.04:**
+Verify with `torsocks`:
 ```bash
-sudo apt install -y chromium-browser chromium-chromedriver
-chromium-browser --headless --no-sandbox --disable-gpu --version
-# Expected: Chromium 1xx.x.xxxx.xxx built on Ubuntu ...
-```
-
-**Kali Linux:**
-```bash
-sudo apt install -y chromium chromium-driver
-chromium --headless --no-sandbox --disable-gpu --version
-```
-
-Verify ChromeDriver matches Chromium:
-```bash
-chromedriver --version       # Must match Chromium major version
-chromium-browser --version   # or: chromium --version
+torsocks curl https://check.torproject.org/api/ip
+# Expected: {"IsTor":true, ...}
 ```
 
 ---
 
-### 3.5 Verify All Tools Are Present
-
-Run the provided verification script:
-```bash
-bash scripts/tool_check.sh
-```
-
-The script checks every tool by name and reports missing ones:
-```
-[✔] nmap          found at /usr/bin/nmap
-[✔] masscan       found at /usr/bin/masscan
-[✔] nuclei        found at /home/hexstrike/go/bin/nuclei
-[✗] rustscan      NOT FOUND — run: cargo install rustscan
-...
-[SUMMARY] 143/150 tools found. 7 missing — see above.
-```
-
-Fix any missing tools before proceeding.
-
----
-
-## 4. Configuration
-
-### 4.1 Environment Variables (`.env`)
-
-Copy the template and fill in your values:
+### 3.4 Prevent DNS Leaks
 
 ```bash
-cp .env.example .env
-nano .env
+# Point system DNS to Tor's DNS resolver
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+# Prevent NetworkManager / systemd-resolved from overwriting it
+sudo chattr +i /etc/resolv.conf
 ```
 
-Full annotated `.env` file:
-
-```dotenv
-# ============================================================
-# Venice AI
-# ============================================================
-VENICE_API_KEY=your_venice_api_key_here
-# Abliterated model to use — see Section 4a for full list
-VENICE_MODEL=dolphin-2.9-llama3-70b
-VENICE_API_BASE=https://api.venice.ai/api/v1
-
-# ============================================================
-# Telegram Bot
-# ============================================================
-TELEGRAM_BOT_TOKEN=123456789:ABCDEF_your_bot_token_here
-# Your personal Telegram chat ID — all other users are rejected
-TELEGRAM_AUTHORIZED_CHAT_ID=987654321
-
-# ============================================================
-# HexStrike MCP Server
-# ============================================================
-# Bind to loopback — never expose to 0.0.0.0 unless behind a firewall
-MCP_HOST=127.0.0.1
-MCP_PORT=8888
-# Generate with: openssl rand -hex 32
-MCP_SECRET_KEY=replace_this_with_openssl_rand_hex_32_output
-
-# ============================================================
-# Tor
-# ============================================================
-TOR_SOCKS_HOST=127.0.0.1
-TOR_SOCKS_PORT=9050
-# Set to false only for local dev/testing without Tor
-USE_TOR=true
-
-# ============================================================
-# Logging
-# ============================================================
-LOG_LEVEL=INFO
-LOG_FILE=/var/log/hexstrike/hexstrike.log
-```
-
-Create the log directory:
+Verify:
 ```bash
-sudo mkdir -p /var/log/hexstrike
-sudo chown hexstrike:hexstrike /var/log/hexstrike
+torsocks nslookup check.torproject.org
+# Should resolve via 127.0.0.1, not your ISP's DNS
 ```
 
 ---
 
-### 4a. Venice AI Abliterated Models
+### 3.5 Troubleshooting Tor
 
-Abliterated models have had their refusal training removed, enabling them to reason about offensive security tasks without content-policy interruptions.
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Tor not connecting | Firewall blocking outbound 9001/9030 | Allow outbound TCP on all ports or at minimum 9001, 9030 |
+| Port 9050 already in use | Another SOCKS proxy is running | `sudo lsof -i :9050` to identify the process; stop it |
+| `torsocks: Can't connect to Tor` | torsocks config points to wrong port | Check `/etc/tor/torsocks.conf` — `TorAddress 127.0.0.1`, `TorPort 9050` |
+| DNS leaks detected | `resolv.conf` was overwritten | Re-run: `echo "nameserver 127.0.0.1" \| sudo tee /etc/resolv.conf && sudo chattr +i /etc/resolv.conf` |
 
-List available models via the API:
+---
+
+## 4. Telegram Bot Setup
+
+### 4.1 Create the Bot
+
+1. Open Telegram on any device and search for **@BotFather**
+2. Send `/newbot`
+3. When prompted for a name, enter: `HexStrike Operator`
+4. When prompted for a username, enter something unique ending in `bot`, e.g., `hexstrike_op_bot`
+5. BotFather replies with a message containing your token:
+   ```
+   Use this token to access the HTTP API:
+   7123456789:AAE-AbCdEfGhIjKlMnOpQrStUvWxYz12345
+   ```
+6. Copy this token and store it as `TELEGRAM_BOT_TOKEN` in your `.env`
+
+Disable the bot from being added to groups (recommended for C2 use):
+1. Send `/setjoingroups` to BotFather
+2. Select your bot
+3. Select **Disable**
+
+---
+
+### 4.2 Find Your Chat ID
+
+1. Send the message `/start` to your new bot from your personal Telegram account
+2. Run on the VPS:
 ```bash
-curl -s https://api.venice.ai/api/v1/models \
-  -H "Authorization: Bearer $VENICE_API_KEY" | jq '.data[] | {id: .id, context: .context_length}'
+curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+updates = data.get('result', [])
+if updates:
+    chat = updates[-1]['message']['chat']
+    print(f'Chat ID: {chat[\"id\"]}')
+    print(f'Username: {chat.get(\"username\", \"(none)\")}')
+else:
+    print('No updates found — send a message to the bot first')
+"
+```
+3. The numeric `Chat ID` value is your `TELEGRAM_ALLOWED_CHAT_ID`
+
+---
+
+### 4.3 Bot Authorization Model
+
+The Telegram bot rejects all messages from any Chat ID that does not match `TELEGRAM_ALLOWED_CHAT_ID`. Unauthorised requestors receive no response and no error — only silence. The rejection is logged server-side.
+
+---
+
+### 4.4 Bot Dispatcher Setup
+
+Create `telegram_bot.py` in the project root:
+
+```python
+#!/usr/bin/env python3
+"""
+HexStrike AI DN — Telegram C2 Bot
+Routes commands to hexstrike_server.py and relays output to the operator.
+"""
+import os
+import re
+import logging
+import requests
+from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, ContextTypes
+)
+
+load_dotenv()
+
+BOT_TOKEN       = os.environ["TELEGRAM_BOT_TOKEN"]
+ALLOWED_CHAT_ID = int(os.environ["TELEGRAM_ALLOWED_CHAT_ID"])
+SERVER_URL      = (
+    f"http://{os.environ.get('HEXSTRIKE_SERVER_HOST','127.0.0.1')}"
+    f":{os.environ.get('HEXSTRIKE_SERVER_PORT','8888')}"
+)
+USE_TOR         = os.environ.get("USE_TOR", "true").lower() == "true"
+TOR_PROXY       = (
+    f"socks5h://{os.environ.get('TOR_SOCKS_HOST','127.0.0.1')}"
+    f":{os.environ.get('TOR_SOCKS_PORT','9050')}"
+)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def tor_proxies() -> dict:
+    return {"http": TOR_PROXY, "https": TOR_PROXY} if USE_TOR else {}
+
+
+def server_post(endpoint: str, data: dict) -> str:
+    try:
+        r = requests.post(
+            f"{SERVER_URL}/{endpoint}", json=data,
+            proxies=tor_proxies(), timeout=300
+        )
+        r.raise_for_status()
+        return str(r.json())
+    except Exception as exc:
+        return f"[ERROR] {exc}"
+
+
+def server_get(endpoint: str) -> dict:
+    try:
+        r = requests.get(f"{SERVER_URL}/{endpoint}", timeout=15)
+        r.raise_for_status()
+        return r.json()
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+def authorised(update: Update) -> bool:
+    if update.effective_chat.id != ALLOWED_CHAT_ID:
+        logger.warning("Rejected chat ID: %s", update.effective_chat.id)
+        return False
+    return True
+
+
+async def safe_reply(update: Update, text: str) -> None:
+    """Send reply; split into multiple messages if over Telegram's 4096-char limit."""
+    for i in range(0, len(text), 4096):
+        await update.message.reply_text(text[i:i+4096])
+
+
+async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    health = server_get("health")
+    tor_data = requests.get(
+        "https://check.torproject.org/api/ip",
+        proxies=tor_proxies(), timeout=20
+    ).json()
+    reply = (
+        "🔴 *HexStrike AI DN — Online*\n"
+        f"Server status: `{health.get('status','unknown')}`\n"
+        f"Tools loaded: `{health.get('tools_count','150+')}`\n"
+        f"Venice model: `{os.environ.get('VENICE_MODEL','(not set)')}`\n"
+        f"Tor active: `{'✅' if tor_data.get('IsTor') else '❌'}`\n"
+        f"Exit IP: `{tor_data.get('IP','unknown')}`"
+    )
+    await update.message.reply_text(reply, parse_mode="Markdown")
+
+
+async def cmd_status(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    health = server_get("health")
+    tor_data = requests.get(
+        "https://check.torproject.org/api/ip",
+        proxies=tor_proxies(), timeout=20
+    ).json()
+    reply = (
+        "📊 *Status*\n"
+        f"Server: `{health.get('status','unknown')}`\n"
+        f"Version: `{health.get('version','6.0')}`\n"
+        f"Tor: `{'✅ Active' if tor_data.get('IsTor') else '❌ Not routing'}`\n"
+        f"Exit IP: `{tor_data.get('IP','unknown')}`\n"
+        f"Model: `{os.environ.get('VENICE_MODEL','(not set)')}`"
+    )
+    await update.message.reply_text(reply, parse_mode="Markdown")
+
+
+async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    if not ctx.args:
+        await update.message.reply_text("Usage: /scan <target>")
+        return
+    target = ctx.args[0]
+    await update.message.reply_text(
+        f"🔍 Scanning `{target}` ...", parse_mode="Markdown"
+    )
+    result = server_post("api/tools/nmap_scan", {"target": target, "scan_type": "-sV"})
+    await safe_reply(update, f"```\n{result}\n```")
+
+
+async def cmd_nuclei(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    if not ctx.args:
+        await update.message.reply_text("Usage: /nuclei <target>")
+        return
+    target = ctx.args[0]
+    await update.message.reply_text(f"🎯 Running Nuclei on `{target}` ...", parse_mode="Markdown")
+    result = server_post("api/tools/nuclei_scan", {"target": target})
+    await safe_reply(update, f"```\n{result}\n```")
+
+
+async def cmd_sqlmap(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    if not ctx.args:
+        await update.message.reply_text("Usage: /sqlmap <url>")
+        return
+    url = ctx.args[0]
+    await update.message.reply_text(f"💉 Running SQLMap on `{url}` ...", parse_mode="Markdown")
+    result = server_post("api/tools/sqlmap_scan", {"url": url})
+    await safe_reply(update, f"```\n{result}\n```")
+
+
+async def cmd_ffuf(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    if not ctx.args:
+        await update.message.reply_text("Usage: /ffuf <url>  (put FUZZ in the URL)")
+        return
+    url = ctx.args[0]
+    await update.message.reply_text(f"📂 Running ffuf on `{url}` ...", parse_mode="Markdown")
+    result = server_post("api/tools/ffuf_scan", {"url": url})
+    await safe_reply(update, f"```\n{result}\n```")
+
+
+async def cmd_ask(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    if not ctx.args:
+        await update.message.reply_text("Usage: /ask <your question or prompt>")
+        return
+    prompt = " ".join(ctx.args)
+    venice_base = os.environ.get("VENICE_BASE_URL", "https://api.venice.ai/api/v1")
+    venice_key  = os.environ["VENICE_API_KEY"]
+    venice_model = os.environ.get("VENICE_MODEL", "nous-hermes-2-mixtral-8x7b")
+    resp = requests.post(
+        f"{venice_base}/chat/completions",
+        headers={"Authorization": f"Bearer {venice_key}"},
+        json={
+            "model": venice_model,
+            "messages": [
+                {"role": "system", "content": "You are an expert offensive security engineer."},
+                {"role": "user",   "content": prompt},
+            ],
+            "temperature": 0.7,
+        },
+        proxies=tor_proxies(),
+        timeout=120,
+    )
+    resp.raise_for_status()
+    answer = resp.json()["choices"][0]["message"]["content"]
+    await safe_reply(update, answer)
+
+
+async def cmd_stop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    result = server_post("api/shutdown", {})
+    await update.message.reply_text(f"🛑 Shutdown signal sent: {result}")
+
+
+async def cmd_results(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    data = server_get("api/results/last")
+    await safe_reply(update, str(data))
+
+
+async def cmd_tor_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    data = requests.get(
+        "https://check.torproject.org/api/ip",
+        proxies=tor_proxies(), timeout=20
+    ).json()
+    status = "✅ Routing through Tor" if data.get("IsTor") else "❌ NOT through Tor"
+    await update.message.reply_text(
+        f"{status}\nExit IP: `{data.get('IP','unknown')}`", parse_mode="Markdown"
+    )
+
+
+async def cmd_newcircuit(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not authorised(update):
+        return
+    try:
+        from stem import Signal
+        from stem.control import Controller
+        with Controller.from_port(port=9051) as ctrl:
+            ctrl.authenticate()
+            ctrl.signal(Signal.NEWNYM)
+        await update.message.reply_text("🔄 New Tor circuit requested.")
+    except Exception as exc:
+        await update.message.reply_text(f"[ERROR] {exc}")
+
+
+def main() -> None:
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start",      cmd_start))
+    app.add_handler(CommandHandler("status",     cmd_status))
+    app.add_handler(CommandHandler("scan",       cmd_scan))
+    app.add_handler(CommandHandler("nuclei",     cmd_nuclei))
+    app.add_handler(CommandHandler("sqlmap",     cmd_sqlmap))
+    app.add_handler(CommandHandler("ffuf",       cmd_ffuf))
+    app.add_handler(CommandHandler("ask",        cmd_ask))
+    app.add_handler(CommandHandler("stop",       cmd_stop))
+    app.add_handler(CommandHandler("results",    cmd_results))
+    app.add_handler(CommandHandler("tor_check",  cmd_tor_check))
+    app.add_handler(CommandHandler("newcircuit", cmd_newcircuit))
+    logger.info("HexStrike Telegram bot polling...")
+    app.run_polling()
+
+
+if __name__ == "__main__":
+    main()
 ```
 
-**Currently available abliterated models and recommended use cases:**
+Install the additional bot dependencies:
+```bash
+pip install python-telegram-bot==20.7 python-dotenv stem requests[socks]
+```
+
+---
+
+## 5. Venice AI Configuration
+
+### 5.1 What Abliterated Models Are
+
+Standard LLM models (GPT-4, Claude, etc.) include content-filtering layers — trained refusals that prevent them from discussing offensive security topics such as exploitation, payload generation, or vulnerability analysis. **Abliterated models** are open-source LLMs that have had this refusal training removed, allowing them to reason freely about offensive security tasks without interruption.
+
+Venice AI hosts abliterated versions of leading open-source models and exposes them via an **OpenAI-compatible REST API** at `https://api.venice.ai/api/v1`. This means the same `requests.post` call structure used for OpenAI works identically with Venice AI — only the base URL and API key differ.
+
+---
+
+### 5.2 Obtain a Venice AI API Key
+
+1. Open a browser and navigate to **https://venice.ai**
+2. Create an account or sign in with an existing one
+3. Click your profile avatar in the top-right corner → **Settings** → **API Keys**
+4. Click **Create API Key**, enter a label (e.g., `hexstrike-vps`), and confirm
+5. Copy the key — it is shown only once; store it as `VENICE_API_KEY` in `.env`
+
+---
+
+### 5.3 Recommended Abliterated Models
 
 | Model ID | Parameters | Best Use Case |
 |----------|-----------|---------------|
-| `dolphin-2.9-llama3-70b` | 70B | General pentesting reasoning, exploit chaining, report writing |
-| `dolphin-mixtral-8x22b` | 8×22B MoE | Complex multi-step attack planning, CTF problem solving |
-| `dolphin-2.9.1-llama-3.1-8b` | 8B | Fast interactive queries, command generation, quick pivots |
-| `nous-hermes-2-mixtral-8x7b-dpo` | 8×7B MoE | OSINT analysis, social engineering script generation |
-| `llama-3.1-405b-akash` | 405B | Deep vulnerability analysis, zero-day research reasoning |
-| `mistral-31-24b` | 24B | Balanced performance — good for interactive Telegram sessions |
+| `nous-hermes-2-mixtral-8x7b` | 8×7B MoE | **Default recommendation** — reasoning, attack planning, OSINT analysis |
+| `dolphin-2.9-llama3-8b` | 8B | **Fast interactive queries** — Telegram responses, command generation, quick pivots |
+| `dolphin-mixtral-8x22b` | 8×22B MoE | **Large context analysis** — interpreting long tool outputs, CVE research, report writing |
+| `dolphin-2.9-llama3-70b` | 70B | **Deep reasoning** — complex multi-step exploit chains, zero-day research |
 
-> **Recommendation:** Use `dolphin-2.9-llama3-70b` for most tasks. Fall back to the 8B model for low-latency Telegram interactions where speed matters more than depth.
+List all available models via the API:
+```bash
+curl -s "https://api.venice.ai/api/v1/models" \
+  -H "Authorization: Bearer $VENICE_API_KEY" \
+  | python3 -c "import sys,json; [print(m['id']) for m in json.load(sys.stdin)['data']]"
+```
 
-Python example — direct Venice AI call over SOCKS5:
+---
+
+### 5.4 Route Venice AI Calls Through Tor
+
+All calls from `telegram_bot.py` and `hexstrike_server.py` to the Venice AI API are made through the Tor SOCKS5 proxy. Always use `socks5h://` (not `socks5://`) to route DNS resolution through Tor as well.
+
 ```python
+import os
 import requests
 
 proxies = {
@@ -500,44 +765,109 @@ proxies = {
 
 response = requests.post(
     "https://api.venice.ai/api/v1/chat/completions",
-    headers={"Authorization": f"Bearer {VENICE_API_KEY}"},
+    headers={"Authorization": f"Bearer {os.environ['VENICE_API_KEY']}"},
     json={
-        "model": "dolphin-2.9-llama3-70b",
+        "model": os.environ.get("VENICE_MODEL", "nous-hermes-2-mixtral-8x7b"),
         "messages": [
-            {"role": "system", "content": "You are an expert offensive security engineer."},
-            {"role": "user", "content": "Enumerate the attack surface for 10.10.10.1"},
+            {
+                "role": "system",
+                "content": "You are an expert offensive security engineer.",
+            },
+            {
+                "role": "user",
+                "content": "Enumerate the attack surface for 10.10.10.1",
+            },
         ],
         "temperature": 0.7,
     },
     proxies=proxies,
     timeout=120,
 )
+response.raise_for_status()
 print(response.json()["choices"][0]["message"]["content"])
 ```
 
-curl equivalent (without Tor for testing):
+Equivalent `curl` test (through `torsocks`):
 ```bash
-curl -s https://api.venice.ai/api/v1/chat/completions \
+torsocks curl -s "https://api.venice.ai/api/v1/chat/completions" \
   -H "Authorization: Bearer $VENICE_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "dolphin-2.9-llama3-70b",
+    "model": "nous-hermes-2-mixtral-8x7b",
     "messages": [
       {"role":"system","content":"You are an expert offensive security engineer."},
-      {"role":"user","content":"List common SMB attack vectors."}
-    ]
-  }' | jq '.choices[0].message.content'
+      {"role":"user","content":"List common web application attack vectors."}
+    ],
+    "temperature": 0.7
+  }' | python3 -c "import sys,json; print(json.load(sys.stdin)['choices'][0]['message']['content'])"
 ```
 
 ---
 
-### 4.2 MCP Configuration File (`hexstrike-ai-mcp.json`)
+## 6. Configuration
 
-This file tells the MCP host (Venice AI agent or any OpenAI-compatible client) how to launch `hexstrike_mcp.py` as a subprocess and which server to connect it to.
+### 6.1 Environment Variables
+
+Copy the template and populate every value:
+```bash
+cp .env.example .env
+nano .env
+```
+
+Full annotated `.env.example`:
+```dotenv
+# ============================================================
+# Venice AI
+# ============================================================
+VENICE_API_KEY=your_venice_api_key_here
+# Abliterated model — see Section 5.3 for full list
+VENICE_MODEL=nous-hermes-2-mixtral-8x7b
+# Venice AI OpenAI-compatible API base URL
+VENICE_BASE_URL=https://api.venice.ai/api/v1
+
+# ============================================================
+# Telegram Bot
+# ============================================================
+TELEGRAM_BOT_TOKEN=123456789:ABCDEF_your_bot_token_here
+# Your personal Telegram numeric chat ID — all other IDs are rejected
+TELEGRAM_ALLOWED_CHAT_ID=987654321
+
+# ============================================================
+# HexStrike MCP Server
+# ============================================================
+# Bind to loopback only — do not set to 0.0.0.0 in production
+HEXSTRIKE_SERVER_HOST=127.0.0.1
+HEXSTRIKE_SERVER_PORT=8888
+
+# ============================================================
+# Tor
+# ============================================================
+TOR_SOCKS_HOST=127.0.0.1
+TOR_SOCKS_PORT=9050
+# Set to false only for local lab testing without Tor
+USE_TOR=true
+
+# ============================================================
+# Logging
+# ============================================================
+# INFO for production; DEBUG for verbose development output
+LOG_LEVEL=INFO
+```
+
+Generate a secret key for Flask if needed:
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+---
+
+### 6.2 `hexstrike-ai-mcp.json`
+
+This file tells any MCP-compatible host (e.g., a Venice AI autonomous agent loop, or a local LLM orchestrator) how to launch `hexstrike_mcp.py` as a subprocess.
 
 **Corrected production configuration:**
 
-> **Note:** The path `/home/hexstrike/hexstrike-ai-dn/hexstrike_mcp.py` assumes the repository is cloned to the `hexstrike` user's home directory. If you use a different installation path, update this value accordingly in `hexstrike-ai-mcp.json`.
+> **Important:** Update `args[0]` to the absolute path of `hexstrike_mcp.py` on your VPS. The path below assumes the repository was cloned to `/home/hexstrike/hexstrike-ai-dn`. Adjust if you used a different directory.
 
 ```json
 {
@@ -549,7 +879,7 @@ This file tells the MCP host (Venice AI agent or any OpenAI-compatible client) h
         "--server",
         "http://127.0.0.1:8888"
       ],
-      "description": "HexStrike AI v6.0 — Offensive Security Automation Platform. Set alwaysAllow to [] for manual approval of each tool call, or list specific tool names for autonomous execution.",
+      "description": "HexStrike AI v6.0 — Offensive Security Automation Platform. Set alwaysAllow to [] for manual approval of each tool call.",
       "timeout": 300,
       "alwaysAllow": []
     }
@@ -561,19 +891,32 @@ This file tells the MCP host (Venice AI agent or any OpenAI-compatible client) h
 
 | Field | Description |
 |-------|-------------|
-| `command` | Python interpreter to use — must be the one with the venv activated, or the full venv path |
-| `args[0]` | **Absolute path** to `hexstrike_mcp.py` on your VPS |
-| `args[2]` | URL of the running `hexstrike_server.py` — must match `MCP_HOST:MCP_PORT` in `.env` |
-| `timeout` | Seconds to wait for a tool response — 300s (5 min) is suitable for long-running scans |
-| `alwaysAllow` | Tool names that execute without user confirmation. Empty `[]` = require approval for every call |
-
-**How Venice AI replaces Claude/GPT:** Instead of routing tool calls through Claude Desktop or the OpenAI API, the `hexstrike_mcp.py` process is started directly by the Telegram bot (`telegram_bot.py`) or an autonomous Venice AI agent. The agent sends tool-call requests (e.g., `nmap_scan`, `run_nuclei`) via the MCP protocol; `hexstrike_mcp.py` translates them to HTTP requests against `hexstrike_server.py`; the server executes the system command and returns structured results.
+| `command` | Python interpreter — use the full venv path for isolation: `/home/hexstrike/hexstrike-ai-dn/hexstrike_env/bin/python3` |
+| `args[0]` | Absolute path to `hexstrike_mcp.py` on this VPS |
+| `args[2]` | URL of the running `hexstrike_server.py` — must match `HEXSTRIKE_SERVER_HOST:HEXSTRIKE_SERVER_PORT` in `.env` |
+| `timeout` | Maximum seconds to wait for a tool response (300 = 5 minutes) |
+| `alwaysAllow` | List of tool names that run without operator confirmation. Use `[]` to require approval for every call |
 
 ---
 
-## 5. Installation
+### 6.3 Debug vs. Production Mode
 
-Follow these steps on a **fresh Kali Linux 2024.1 or Ubuntu 22.04 VPS**. Every command must be run as the `hexstrike` user unless `sudo` is explicitly shown.
+| Setting | Production | Debug |
+|---------|-----------|-------|
+| `LOG_LEVEL` | `INFO` | `DEBUG` |
+| Flask debug | Off (default) | Set `FLASK_DEBUG=1` |
+| Tor routing | `USE_TOR=true` | `USE_TOR=false` (local lab only) |
+
+Switch to debug mode temporarily:
+```bash
+LOG_LEVEL=DEBUG USE_TOR=false python3 hexstrike_server.py
+```
+
+---
+
+## 7. Installation
+
+Follow every step in order on a **clean Ubuntu 20.04 LTS VPS** accessed via SSH. Every command runs as the `hexstrike` user unless `sudo` is shown.
 
 ### Step 1 — Clone the Repository
 
@@ -587,735 +930,258 @@ Expected output:
 ```
 Cloning into 'hexstrike-ai-dn'...
 remote: Enumerating objects: 42, done.
-...
 Resolving deltas: 100% (18/18), done.
 ```
 
----
-
-### Step 2 — Create and Activate a Python Virtual Environment
-
+Common error:
+```
+fatal: unable to access 'https://github.com/...': Could not resolve host: github.com
+```
+Fix: DNS is probably pointing to `127.0.0.1` before Tor is running. Temporarily restore DNS:
 ```bash
-python3.11 -m venv hexstrike_env        # Ubuntu 22.04
-# or:
-python3 -m venv hexstrike_env           # Kali Linux
-
-source hexstrike_env/bin/activate
-# Prompt changes to: (hexstrike_env) hexstrike@vps:~/hexstrike-ai-dn$
-which python3    # Expected: ~/hexstrike-ai-dn/hexstrike_env/bin/python3
+sudo chattr -i /etc/resolv.conf
+echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+# After cloning, re-enable Tor DNS:
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf && sudo chattr +i /etc/resolv.conf
 ```
 
 ---
 
-### Step 3 — Install Python Dependencies
+### Step 2 — Navigate to the Project Directory
+
+```bash
+cd ~/hexstrike-ai-dn
+pwd
+# Expected: /home/hexstrike/hexstrike-ai-dn
+```
+
+---
+
+### Step 3 — Create and Activate a Python 3.10 Virtual Environment
+
+```bash
+python3.10 -m venv hexstrike_env
+source hexstrike_env/bin/activate
+python3 --version
+# Expected: Python 3.10.x
+which pip
+# Expected: /home/hexstrike/hexstrike-ai-dn/hexstrike_env/bin/pip
+```
+
+Common error:
+```
+python3.10: command not found
+```
+Fix:
+```bash
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.10 python3.10-venv python3.10-dev
+```
+
+---
+
+### Step 4 — Install Python Dependencies
 
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Expected output (final lines):
+Expected final lines:
 ```
 Successfully installed aiohttp-3.9.5 beautifulsoup4-4.12.3 bcrypt-4.0.1
   fastmcp-0.2.3 flask-3.0.3 mitmproxy-10.2.4 psutil-5.9.8
-  pwntools-4.12.0 requests-2.32.3 selenium-4.21.0 webdriver-manager-4.0.1
-  ...
+  pwntools-4.12.0 requests-2.32.3 selenium-4.21.0 ...
 Successfully installed 38 packages.
 ```
 
-**Common error — bcrypt conflict:**
+Common error — bcrypt conflict:
 ```
-ERROR: pip's dependency resolver does not currently take into account all the packages that are installed...
+ERROR: pip's dependency resolver does not currently take into account all the packages...
 ```
 Fix:
 ```bash
 pip install bcrypt==4.0.1 --force-reinstall
 ```
 
+Common error — pwntools fails on Python 3.11:
+```
+ERROR: Could not build wheels for pwntools
+```
+Fix: Ensure you activated the Python **3.10** venv (not system Python 3.11):
+```bash
+deactivate
+python3.10 -m venv hexstrike_env
+source hexstrike_env/bin/activate
+```
+
 ---
 
-### Step 4 — Install All External Security Tools
+### Step 5 — Copy `.env.example` to `.env` and Fill In All Values
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Minimum required values:
+```dotenv
+VENICE_API_KEY=<your key>
+VENICE_MODEL=nous-hermes-2-mixtral-8x7b
+TELEGRAM_BOT_TOKEN=<your token>
+TELEGRAM_ALLOWED_CHAT_ID=<your numeric chat ID>
+```
+
+---
+
+### Step 6 — Verify Tor Is Running and Routing Correctly
+
+```bash
+sudo systemctl status tor
+# Expected: active (running)
+
+curl --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip
+# Expected: {"IsTor":true,"IP":"..."}
+```
+
+If Tor is not running:
+```bash
+sudo systemctl start tor && sudo systemctl enable tor
+```
+
+---
+
+### Step 7 — Install All 150+ External Security Tools
 
 ```bash
 bash scripts/install_tools.sh
 ```
 
-This script runs the full grouped `apt install` block and installs Go/Rust-based tools. It takes 10–20 minutes on a fresh VPS. When complete:
+This takes 10–20 minutes on a fresh VPS. When complete:
 ```
 [✔] All 150 tools verified.
 ```
 
-If the script is not yet present (first-time setup), run the grouped install manually (see [Section 2.6](#26-external-security-tools-150)).
-
----
-
-### Step 5 — Install and Configure Tor
-
+Verify with the check script:
 ```bash
-sudo apt install -y tor torsocks
-sudo cp /etc/tor/torrc /etc/tor/torrc.backup
-sudo tee -a /etc/tor/torrc <<'EOF'
-SocksPort 9050
-DNSPort 53
-TransPort 9040
-AutomapHostsOnResolve 1
-VirtualAddrNetworkIPv4 10.192.0.0/10
-Log notice file /var/log/tor/notices.log
-EOF
-sudo systemctl restart tor && sudo systemctl enable tor
-torsocks curl -s https://check.torproject.org/api/ip
-# Expected: {"IsTor":true,"IP":"..."}
+bash scripts/tool_check.sh
 ```
 
 ---
 
-### Step 6 — Create and Populate `.env`
-
-```bash
-cp .env.example .env
-# Edit with your values:
-nano .env
-```
-
-Generate a secure `MCP_SECRET_KEY`:
-```bash
-openssl rand -hex 32
-# Example output: a3f8d1c2e4b5a6789012345678901234abcdef0123456789abcdef0123456789
-```
-
-Paste the output as `MCP_SECRET_KEY` in `.env`.
-
----
-
-### Step 7 — Configure the Telegram Bot Integration
-
-Create `telegram_bot.py` in the project root:
-
-```python
-#!/usr/bin/env python3
-"""
-HexStrike AI DN — Telegram C2 Bot
-Dispatches commands to hexstrike_server.py and relays output to the operator.
-"""
-import os
-import logging
-import asyncio
-import requests
-from dotenv import load_dotenv
-from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler, MessageHandler,
-    filters, ContextTypes
-)
-
-load_dotenv()
-
-TELEGRAM_BOT_TOKEN      = os.environ["TELEGRAM_BOT_TOKEN"]
-AUTHORIZED_CHAT_ID      = int(os.environ["TELEGRAM_AUTHORIZED_CHAT_ID"])
-MCP_SERVER_URL          = f"http://{os.environ.get('MCP_HOST','127.0.0.1')}:{os.environ.get('MCP_PORT','8888')}"
-USE_TOR                 = os.environ.get("USE_TOR", "true").lower() == "true"
-TOR_SOCKS               = f"socks5h://{os.environ.get('TOR_SOCKS_HOST','127.0.0.1')}:{os.environ.get('TOR_SOCKS_PORT','9050')}"
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-def get_proxies():
-    return {"http": TOR_SOCKS, "https": TOR_SOCKS} if USE_TOR else {}
-
-
-def mcp_post(endpoint: str, data: dict) -> str:
-    try:
-        r = requests.post(
-            f"{MCP_SERVER_URL}/{endpoint}",
-            json=data, proxies=get_proxies(), timeout=300
-        )
-        r.raise_for_status()
-        return str(r.json())
-    except Exception as e:
-        return f"[ERROR] {e}"
-
-
-def auth(update: Update) -> bool:
-    if update.effective_chat.id != AUTHORIZED_CHAT_ID:
-        logger.warning(f"Rejected chat ID: {update.effective_chat.id}")
-        return False
-    return True
-
-
-async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    tor_ip = requests.get(
-        "https://check.torproject.org/api/ip",
-        proxies=get_proxies(), timeout=15
-    ).json()
-    health = requests.get(f"{MCP_SERVER_URL}/health", timeout=10).json()
-    msg = (
-        f"🔴 *HexStrike AI DN — Online*\n"
-        f"Venice AI model: `{os.environ.get('VENICE_MODEL')}`\n"
-        f"Tor exit IP: `{tor_ip.get('IP','unknown')}`\n"
-        f"Server status: `{health.get('status','unknown')}`\n"
-        f"Tools loaded: `{health.get('tools_count','150+')}`"
-    )
-    await update.message.reply_text(msg, parse_mode="Markdown")
-
-
-async def cmd_status(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    health = requests.get(f"{MCP_SERVER_URL}/health", timeout=10).json()
-    tor_ip = requests.get(
-        "https://check.torproject.org/api/ip",
-        proxies=get_proxies(), timeout=15
-    ).json()
-    msg = (
-        f"📊 *Status*\n"
-        f"MCP Server: `{health.get('status','unknown')}`\n"
-        f"Version: `{health.get('version','6.0')}`\n"
-        f"Tor: `{'✅ Active' if tor_ip.get('IsTor') else '❌ Not routing'}`\n"
-        f"Exit IP: `{tor_ip.get('IP','unknown')}`\n"
-        f"Model: `{os.environ.get('VENICE_MODEL')}`"
-    )
-    await update.message.reply_text(msg, parse_mode="Markdown")
-
-
-async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    if not ctx.args:
-        await update.message.reply_text("Usage: /scan <target>")
-        return
-    target = ctx.args[0]
-    await update.message.reply_text(f"🔍 Scanning `{target}` via nmap + masscan...", parse_mode="Markdown")
-    result = mcp_post("api/tools/nmap_scan", {"target": target, "scan_type": "-sV", "ports": ""})
-    # Truncate long output and send as file if needed
-    if len(result) > 4000:
-        # Sanitize target to prevent path traversal — allow only alphanumeric, dots, hyphens, colons
-        import re as _re
-        safe_target = _re.sub(r"[^a-zA-Z0-9.\-:]", "_", target)
-        out_path = f"/tmp/scan_{safe_target}.txt"
-        with open(out_path, "w") as f:
-            f.write(result)
-        with open(out_path, "rb") as fh:
-            await update.message.reply_document(
-                document=fh,
-                caption=f"Scan results for {target}"
-            )
-    else:
-        await update.message.reply_text(f"```\n{result[:4000]}\n```", parse_mode="Markdown")
-
-
-async def cmd_recon(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    if not ctx.args:
-        await update.message.reply_text("Usage: /recon <domain>")
-        return
-    domain = ctx.args[0]
-    await update.message.reply_text(f"🕵️ Starting recon on `{domain}`...", parse_mode="Markdown")
-    result = mcp_post("api/tools/recon", {"target": domain, "tools": "amass,subfinder,httpx"})
-    output = result[:4000] if len(result) > 4000 else result
-    await update.message.reply_text(f"```\n{output}\n```", parse_mode="Markdown")
-
-
-async def cmd_web(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    if not ctx.args:
-        await update.message.reply_text("Usage: /web <url>")
-        return
-    url = ctx.args[0]
-    await update.message.reply_text(f"🌐 Web scan: `{url}`...", parse_mode="Markdown")
-    result = mcp_post("api/tools/web_scan", {"url": url, "tools": "nuclei,nikto,sqlmap"})
-    await update.message.reply_text(f"```\n{result[:4000]}\n```", parse_mode="Markdown")
-
-
-async def cmd_exploit(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    if len(ctx.args) < 2:
-        await update.message.reply_text("Usage: /exploit <module> <target>")
-        return
-    module, target = ctx.args[0], ctx.args[1]
-    result = mcp_post("api/tools/exploit", {"module": module, "target": target})
-    await update.message.reply_text(f"```\n{result[:4000]}\n```", parse_mode="Markdown")
-
-
-async def cmd_ask(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    if not ctx.args:
-        await update.message.reply_text("Usage: /ask <your question>")
-        return
-    prompt = " ".join(ctx.args)
-    proxies = get_proxies()
-    resp = requests.post(
-        f"{os.environ.get('VENICE_API_BASE','https://api.venice.ai/api/v1')}/chat/completions",
-        headers={"Authorization": f"Bearer {os.environ['VENICE_API_KEY']}"},
-        json={
-            "model": os.environ.get("VENICE_MODEL", "dolphin-2.9-llama3-70b"),
-            "messages": [
-                {"role": "system", "content": "You are an expert offensive security engineer."},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.7,
-        },
-        proxies=proxies, timeout=120,
-    )
-    answer = resp.json()["choices"][0]["message"]["content"]
-    await update.message.reply_text(answer[:4096])
-
-
-async def cmd_tor_renew(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    try:
-        from stem import Signal
-        from stem.control import Controller
-        with Controller.from_port(port=9051) as controller:
-            controller.authenticate()
-            controller.signal(Signal.NEWNYM)
-        await update.message.reply_text("🔄 New Tor circuit requested.")
-    except Exception as e:
-        await update.message.reply_text(f"[ERROR] {e}")
-
-
-async def cmd_torcheck(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    data = requests.get(
-        "https://check.torproject.org/api/ip",
-        proxies=get_proxies(), timeout=15
-    ).json()
-    status = "✅ Routing through Tor" if data.get("IsTor") else "❌ NOT through Tor"
-    await update.message.reply_text(f"{status}\nExit IP: `{data.get('IP','unknown')}`", parse_mode="Markdown")
-
-
-async def cmd_logs(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    n = int(ctx.args[0]) if ctx.args else 50
-    log_file = os.environ.get("LOG_FILE", "/var/log/hexstrike/hexstrike.log")
-    try:
-        import subprocess
-        lines = subprocess.check_output(["tail", f"-n{n}", log_file], text=True)
-        await update.message.reply_text(f"```\n{lines[-4000:]}\n```", parse_mode="Markdown")
-    except Exception as e:
-        await update.message.reply_text(f"[ERROR] {e}")
-
-
-async def cmd_stop(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if not auth(update): return
-    result = requests.post(f"{MCP_SERVER_URL}/api/shutdown", timeout=10)
-    await update.message.reply_text(f"🛑 Shutdown signal sent: {result.status_code}")
-
-
-def main():
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start",    cmd_start))
-    app.add_handler(CommandHandler("status",   cmd_status))
-    app.add_handler(CommandHandler("scan",     cmd_scan))
-    app.add_handler(CommandHandler("recon",    cmd_recon))
-    app.add_handler(CommandHandler("web",      cmd_web))
-    app.add_handler(CommandHandler("exploit",  cmd_exploit))
-    app.add_handler(CommandHandler("ask",      cmd_ask))
-    app.add_handler(CommandHandler("tor",      cmd_tor_renew))
-    app.add_handler(CommandHandler("torcheck", cmd_torcheck))
-    app.add_handler(CommandHandler("logs",     cmd_logs))
-    app.add_handler(CommandHandler("stop",     cmd_stop))
-    logger.info("HexStrike Telegram bot starting...")
-    app.run_polling()
-
-
-if __name__ == "__main__":
-    main()
-```
-
-Install the additional Telegram and environment dependencies:
-```bash
-pip install python-telegram-bot==20.7 python-dotenv stem requests[socks]
-```
-
----
-
-### Step 8 — Configure Venice AI and Tor in the Server
-
-#### 8a — Add Venice AI client (`venice_client.py`)
-
-Create `venice_client.py`:
-```python
-#!/usr/bin/env python3
-"""Venice AI API wrapper — abliterated model calls over SOCKS5/Tor."""
-import os
-import requests
-from dotenv import load_dotenv
-
-load_dotenv()
-
-VENICE_API_BASE = os.environ.get("VENICE_API_BASE", "https://api.venice.ai/api/v1")
-VENICE_API_KEY  = os.environ["VENICE_API_KEY"]
-VENICE_MODEL    = os.environ.get("VENICE_MODEL", "dolphin-2.9-llama3-70b")
-TOR_SOCKS_HOST  = os.environ.get("TOR_SOCKS_HOST", "127.0.0.1")
-TOR_SOCKS_PORT  = os.environ.get("TOR_SOCKS_PORT", "9050")
-USE_TOR         = os.environ.get("USE_TOR", "true").lower() == "true"
-
-PROXIES = (
-    {
-        "http":  f"socks5h://{TOR_SOCKS_HOST}:{TOR_SOCKS_PORT}",
-        "https": f"socks5h://{TOR_SOCKS_HOST}:{TOR_SOCKS_PORT}",
-    }
-    if USE_TOR else {}
-)
-
-
-def chat(prompt: str, system: str = "You are an expert offensive security engineer.",
-         model: str = None, temperature: float = 0.7) -> str:
-    """Send a prompt to Venice AI and return the text response."""
-    response = requests.post(
-        f"{VENICE_API_BASE}/chat/completions",
-        headers={"Authorization": f"Bearer {VENICE_API_KEY}"},
-        json={
-            "model": model or VENICE_MODEL,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user",   "content": prompt},
-            ],
-            "temperature": temperature,
-        },
-        proxies=PROXIES,
-        timeout=120,
-    )
-    response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
-```
-
-#### 8b — Add Tor manager (`tor_manager.py`)
-
-Create `tor_manager.py`:
-```python
-#!/usr/bin/env python3
-"""Tor circuit control via stem — NEWNYM signal, IP check, DNS config."""
-import os
-import requests
-from dotenv import load_dotenv
-
-load_dotenv()
-
-TOR_SOCKS_HOST = os.environ.get("TOR_SOCKS_HOST", "127.0.0.1")
-TOR_SOCKS_PORT = int(os.environ.get("TOR_SOCKS_PORT", 9050))
-TOR_CONTROL_PORT = 9051
-
-PROXIES = {
-    "http":  f"socks5h://{TOR_SOCKS_HOST}:{TOR_SOCKS_PORT}",
-    "https": f"socks5h://{TOR_SOCKS_HOST}:{TOR_SOCKS_PORT}",
-}
-
-
-def renew_circuit() -> bool:
-    """Request a new Tor exit node via NEWNYM signal."""
-    try:
-        from stem import Signal
-        from stem.control import Controller
-        with Controller.from_port(port=TOR_CONTROL_PORT) as ctrl:
-            ctrl.authenticate()
-            ctrl.signal(Signal.NEWNYM)
-        return True
-    except Exception as e:
-        print(f"[TorManager] NEWNYM failed: {e}")
-        return False
-
-
-def current_exit_ip() -> dict:
-    """Return current exit IP and Tor status from check.torproject.org."""
-    resp = requests.get(
-        "https://check.torproject.org/api/ip",
-        proxies=PROXIES, timeout=20
-    )
-    return resp.json()
-
-
-def is_tor_active() -> bool:
-    return current_exit_ip().get("IsTor", False)
-```
-
-Enable the Tor control port (required for `stem`):
-```bash
-sudo bash -c 'echo "ControlPort 9051" >> /etc/tor/torrc'
-sudo bash -c 'echo "CookieAuthentication 1" >> /etc/tor/torrc'
-sudo usermod -aG debian-tor hexstrike   # Ubuntu/Debian
-# or:
-sudo usermod -aG tor hexstrike          # Kali
-sudo systemctl restart tor
-```
-
-#### 8c — Wrap `requests` calls in `hexstrike_server.py` with SOCKS5
-
-At the top of `hexstrike_server.py`, after the existing imports, add:
-```python
-# Load SOCKS5 proxy from environment when USE_TOR=true
-# os is already imported at the top of hexstrike_server.py
-if os.environ.get("USE_TOR", "true").lower() == "true":
-    _tor_proxy = f"socks5h://{os.environ.get('TOR_SOCKS_HOST','127.0.0.1')}:{os.environ.get('TOR_SOCKS_PORT','9050')}"
-    _DEFAULT_PROXIES = {"http": _tor_proxy, "https": _tor_proxy}
-else:
-    _DEFAULT_PROXIES = {}
-```
-
-Then ensure any `requests.get` / `requests.post` calls pass `proxies=_DEFAULT_PROXIES` (or use a session with `session.proxies.update(_DEFAULT_PROXIES)`).
-
----
-
-### Step 9 — Verify the Server Starts
+### Step 8 — Run the HexStrike MCP Server
 
 ```bash
 source hexstrike_env/bin/activate
 python3 hexstrike_server.py
 ```
 
-Expected terminal output:
+Expected output:
 ```
 ██╗  ██╗███████╗██╗  ██╗███████╗████████╗██████╗ ██╗██╗  ██╗███████╗
 ...
 [INFO] Server starting on 127.0.0.1:8888
 [INFO] 150+ integrated modules | Adaptive AI decision engine active
-[INFO] Blood-red theme engaged – unified offensive operations UI
-
  * Running on http://127.0.0.1:8888
- * Debug mode: off
 ```
 
 Health check from another terminal:
 ```bash
-curl -s http://127.0.0.1:8888/health | jq .
-```
-Expected:
-```json
-{"status":"healthy","version":"6.0","tools_count":150}
+curl -s http://127.0.0.1:8888/health | python3 -m json.tool
+# Expected: {"status": "healthy", "version": "6.0", "tools_count": 150}
 ```
 
 ---
 
-### Step 10 — Run Health Check via Telegram
+### Step 9 — Run the Telegram Bot Controller
 
-1. Start the bot in a second terminal:
-   ```bash
-   source hexstrike_env/bin/activate
-   python3 telegram_bot.py
-   ```
-2. Open Telegram and send `/status` to your bot
+```bash
+source hexstrike_env/bin/activate
+python3 telegram_bot.py
+```
+
+Expected output:
+```
+INFO:__main__:HexStrike Telegram bot polling...
+```
+
+---
+
+### Step 10 — Verify the Full Stack
+
+Send `/status` to the bot from your Telegram account.
 
 Expected bot reply:
 ```
 📊 Status
-MCP Server: healthy
+Server: healthy
 Version: 6.0
 Tor: ✅ Active
 Exit IP: 185.220.xxx.xxx
-Model: dolphin-2.9-llama3-70b
+Model: nous-hermes-2-mixtral-8x7b
 ```
+
+If the bot does not respond:
+1. Confirm `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALLOWED_CHAT_ID` are correct in `.env`
+2. Check `python3 telegram_bot.py` is running: `tmux ls` or `ps aux | grep telegram`
+3. Verify the server is healthy: `curl -s http://127.0.0.1:8888/health`
 
 ---
 
-## 6. Telegram Bot — Command Reference
+## 8. Build & Running
 
-> **Authorization:** The bot checks `update.effective_chat.id` against `TELEGRAM_AUTHORIZED_CHAT_ID` on every incoming message. Any other chat ID receives no response and logs a warning. There is no fallback, no error message, and no prompt for credentials — silence is the only response to unauthorised requestors.
-
-### Command Table
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/start` | Initialise session; confirm Venice AI model, Tor exit IP, and server health | `/start` |
-| `/status` | Show server health, Tor routing status, current exit IP, active model | `/status` |
-| `/scan <target>` | Run nmap + masscan against target; returns structured port/service list | `/scan 10.10.10.1` |
-| `/recon <domain>` | Full recon chain: amass → subfinder → httpx subdomain enumeration | `/recon example.com` |
-| `/web <url>` | Web app scan: nuclei templates + nikto + sqlmap parameter fuzzing | `/web https://target.com` |
-| `/exploit <module> <target>` | Trigger a specific exploit module on the MCP server | `/exploit smb_ms17 10.10.10.1` |
-| `/ask <prompt>` | Send free-form prompt directly to the Venice AI abliterated model | `/ask enumerate attack surface for 10.10.10.1` |
-| `/tor renew` | Request a new Tor exit node via `NEWNYM` signal | `/tor renew` |
-| `/torcheck` | Confirm current exit IP via check.torproject.org | `/torcheck` |
-| `/logs [n]` | Retrieve last `n` lines from the server log file (default: 50) | `/logs 100` |
-| `/stop` | Send graceful shutdown signal to the MCP server | `/stop` |
-
-### Example Interactions
-
-**`/start`**
-```
-User:  /start
-Bot:   🔴 HexStrike AI DN — Online
-       Venice AI model: dolphin-2.9-llama3-70b
-       Tor exit IP: 185.220.101.47
-       Server status: healthy
-       Tools loaded: 150+
-```
-
-**`/scan 10.10.10.1`**
-```
-User:  /scan 10.10.10.1
-Bot:   🔍 Scanning 10.10.10.1 via nmap + masscan...
-       [2 minutes later]
-Bot:   PORT     STATE SERVICE  VERSION
-       22/tcp   open  ssh      OpenSSH 8.4
-       80/tcp   open  http     Apache httpd 2.4.51
-       443/tcp  open  ssl/http Apache httpd 2.4.51
-       ...
-       [Full results attached as scan_10_10_10_1.txt if > 4000 chars]
-```
-
-**`/ask enumerate attack surface for 10.10.10.1`**
-```
-User:  /ask enumerate attack surface for 10.10.10.1
-Bot:   Based on the target IP, I recommend the following attack surface
-       enumeration steps:
-       1. Port scan (nmap -sV -p- -T4 10.10.10.1)
-       2. Service fingerprinting and CVE lookup
-       3. Web enumeration on ports 80/443 (gobuster, nuclei)
-       4. SMB enumeration (netexec, enum4linux-ng)
-       ...
-```
-
-**`/torcheck`**
-```
-User:  /torcheck
-Bot:   ✅ Routing through Tor
-       Exit IP: 185.220.101.47
-```
-
-**`/logs 20`**
-```
-User:  /logs 20
-Bot:   2024-11-01 14:23:01 INFO Tool nmap_scan started — target 10.10.10.1
-       2024-11-01 14:23:45 INFO nmap_scan completed — 3 open ports found
-       ...
-```
-
----
-
-## 7. Tor Integration
-
-### 7.1 Routing Tool Traffic Through Tor
-
-All outbound tool execution is wrapped with `torsocks`:
+### 8.1 Development — tmux Sessions
 
 ```bash
-# Run nmap through Tor
-torsocks nmap -sV 10.10.10.1
+# Start MCP server in background tmux session
+tmux new-session -d -s hexstrike \
+  "cd ~/hexstrike-ai-dn && source hexstrike_env/bin/activate && python3 hexstrike_server.py"
 
-# Run the entire MCP server through Tor
-torsocks python3 hexstrike_server.py
+# Start Telegram bot in a separate tmux session
+tmux new-session -d -s tgbot \
+  "cd ~/hexstrike-ai-dn && source hexstrike_env/bin/activate && python3 telegram_bot.py"
 
-# Run a single Python script through Tor
-torsocks python3 venice_client.py
+# Attach to either session to see live output
+tmux attach -t hexstrike
+tmux attach -t tgbot
+
+# Detach without stopping: Ctrl+B then D
 ```
 
-> **Note:** `torsocks` intercepts all TCP connections made by the wrapped process and routes them through the SOCKS5 proxy on port 9050. It does not affect UDP — see Section 7.4 for tools that cannot use Tor.
+Start both sessions through Tor:
+```bash
+tmux new-session -d -s hexstrike \
+  "cd ~/hexstrike-ai-dn && source hexstrike_env/bin/activate && torsocks python3 hexstrike_server.py"
+```
 
-### 7.2 SOCKS5 Proxy in Python (`requests` and `aiohttp`)
+---
 
-**`requests`:**
+### 8.2 Route Tool Execution Through Tor
+
+Prefix any tool command with `torsocks` to route it through Tor:
+```bash
+torsocks nmap -sV target.com
+torsocks sqlmap -u "https://target.com/page?id=1" --dbs
+torsocks nuclei -u https://target.com -t ~/nuclei-templates/
+```
+
+Verify Python SOCKS5 routing:
 ```python
-proxies = {
-    "http":  "socks5h://127.0.0.1:9050",
-    "https": "socks5h://127.0.0.1:9050",
-}
-response = requests.get("https://target.com", proxies=proxies, timeout=30)
-```
-
-> Use `socks5h://` (not `socks5://`) — the `h` suffix routes DNS resolution through Tor as well, preventing DNS leaks.
-
-**`aiohttp`:**
-```python
-import aiohttp
-from aiohttp_socks import ProxyConnector
-
-async def fetch(url: str) -> str:
-    connector = ProxyConnector.from_url("socks5://127.0.0.1:9050")
-    async with aiohttp.ClientSession(connector=connector) as session:
-        async with session.get(url) as resp:
-            return await resp.text()
-```
-
-Install `aiohttp-socks`:
-```bash
-pip install aiohttp-socks
-```
-
-### 7.3 Renewing the Tor Circuit Programmatically
-
-Using the `stem` library:
-```python
-from stem import Signal
-from stem.control import Controller
-
-def renew_tor_circuit():
-    with Controller.from_port(port=9051) as controller:
-        controller.authenticate()           # Uses cookie auth by default
-        controller.signal(Signal.NEWNYM)    # Request new exit node
-        print("[Tor] New circuit requested.")
-```
-
-Or via command line:
-```bash
-echo -e 'AUTHENTICATE\r\nSIGNAL NEWNYM\r\nQUIT' | nc 127.0.0.1 9051
-```
-
-### 7.4 DNS Leak Prevention
-
-Add to `/etc/tor/torrc`:
-```ini
-DNSPort 53
-AutomapHostsOnResolve 1
-VirtualAddrNetworkIPv4 10.192.0.0/10
-```
-
-Point system DNS to Tor's DNS resolver:
-```bash
-# Backup and replace resolv.conf
-sudo cp /etc/resolv.conf /etc/resolv.conf.backup
-echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
-# Prevent NetworkManager from overwriting it:
-sudo chattr +i /etc/resolv.conf
-```
-
-Verify no DNS leaks:
-```bash
-torsocks nslookup check.torproject.org
-# Response should show a Tor exit DNS answer, not your ISP's resolver
-```
-
-### 7.5 Tools That Cannot Route Through Tor
-
-The following tools use raw sockets or kernel-level packet injection and **cannot** be proxied through Tor:
-
-| Tool | Reason | Alternative |
-|------|--------|-------------|
-| `masscan` | Raw sockets (kernel bypass) | Use nmap for Tor-routed scanning |
-| `hping3` | Raw ICMP/TCP packet injection | Use nmap with `-sn` for host discovery |
-| `nping` | Raw packet crafting | Acceptable — run without Tor on lab networks |
-| `scapy` | Direct socket access | Wrap output parsing only; craft via Tor-accessible services |
-
-For these tools, either accept the non-anonymised traffic (lab/internal use only), use a VPN as an additional layer before Tor, or run them against local/lab targets where anonymisation is not required.
-
----
-
-## 8. Build & Deployment
-
-### 8.1 Development — tmux Sessions on VPS
-
-```bash
-# Start a new tmux session
-tmux new-session -s hexstrike
-
-# Pane 1 — MCP Server (Ctrl+B, then %)
-source hexstrike_env/bin/activate
-torsocks python3 hexstrike_server.py
-
-# Split pane — Ctrl+B then "
-# Pane 2 — Telegram Bot
-source hexstrike_env/bin/activate
-python3 telegram_bot.py
-
-# Detach and leave running: Ctrl+B, then D
-# Reattach later: tmux attach -t hexstrike
+import requests
+proxies = {"http": "socks5h://127.0.0.1:9050", "https": "socks5h://127.0.0.1:9050"}
+r = requests.get("https://check.torproject.org/api/ip", proxies=proxies)
+print(r.json())
+# Expected: {'IsTor': True, 'IP': '185.220.xxx.xxx'}
 ```
 
 ---
 
-### 8.2 Production — systemd Services
+### 8.3 Production — systemd Services
 
-Create the two service unit files:
+Create the service unit files:
 
-**`systemd/hexstrike-server.service`:**
+**`/etc/systemd/system/hexstrike-server.service`:**
 ```ini
 [Unit]
 Description=HexStrike AI DN — MCP Server
@@ -1325,9 +1191,11 @@ Wants=tor.service
 [Service]
 Type=simple
 User=hexstrike
+Group=hexstrike
 WorkingDirectory=/home/hexstrike/hexstrike-ai-dn
 EnvironmentFile=/home/hexstrike/hexstrike-ai-dn/.env
-ExecStart=/usr/bin/torsocks /home/hexstrike/hexstrike-ai-dn/hexstrike_env/bin/python3 hexstrike_server.py
+ExecStart=/home/hexstrike/hexstrike-ai-dn/hexstrike_env/bin/python3 \
+          /home/hexstrike/hexstrike-ai-dn/hexstrike_server.py
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
@@ -1338,7 +1206,7 @@ SyslogIdentifier=hexstrike-server
 WantedBy=multi-user.target
 ```
 
-**`systemd/hexstrike-bot.service`:**
+**`/etc/systemd/system/hexstrike-tgbot.service`:**
 ```ini
 [Unit]
 Description=HexStrike AI DN — Telegram C2 Bot
@@ -1348,14 +1216,16 @@ Wants=hexstrike-server.service
 [Service]
 Type=simple
 User=hexstrike
+Group=hexstrike
 WorkingDirectory=/home/hexstrike/hexstrike-ai-dn
 EnvironmentFile=/home/hexstrike/hexstrike-ai-dn/.env
-ExecStart=/home/hexstrike/hexstrike-ai-dn/hexstrike_env/bin/python3 telegram_bot.py
+ExecStart=/home/hexstrike/hexstrike-ai-dn/hexstrike_env/bin/python3 \
+          /home/hexstrike/hexstrike-ai-dn/telegram_bot.py
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=hexstrike-bot
+SyslogIdentifier=hexstrike-tgbot
 
 [Install]
 WantedBy=multi-user.target
@@ -1364,75 +1234,119 @@ WantedBy=multi-user.target
 Install and enable:
 ```bash
 sudo cp systemd/hexstrike-server.service /etc/systemd/system/
-sudo cp systemd/hexstrike-bot.service    /etc/systemd/system/
+sudo cp systemd/hexstrike-tgbot.service  /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable hexstrike-server hexstrike-bot
-sudo systemctl start  hexstrike-server hexstrike-bot
-sudo systemctl status hexstrike-server hexstrike-bot
+sudo systemctl enable hexstrike-server hexstrike-tgbot
+sudo systemctl start  hexstrike-server hexstrike-tgbot
+sudo systemctl status hexstrike-server hexstrike-tgbot
 ```
 
 View live logs:
 ```bash
 journalctl -u hexstrike-server -f
-journalctl -u hexstrike-bot    -f
+journalctl -u hexstrike-tgbot  -f
 ```
 
 ---
 
-### 8.3 CI/CD — Automated Deployment via GitHub Actions
+## 9. Telegram Commands Reference
 
-Create `.github/workflows/deploy.yml`:
+> **Authorization:** Every incoming message is checked against `TELEGRAM_ALLOWED_CHAT_ID`. Messages from any other Chat ID are silently dropped and logged as a warning. There is no error reply to unauthorised senders.
 
-```yaml
-name: Deploy to VPS
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/start` | Initialise bot session; show server health, Tor status, and active model | `/start` |
+| `/status` | Check server health, Tor circuit, and exit IP | `/status` |
+| `/scan <target>` | Run nmap version scan against target | `/scan 10.10.10.1` |
+| `/nuclei <target>` | Run Nuclei vulnerability scan with all default templates | `/nuclei example.com` |
+| `/sqlmap <url>` | Run SQLMap injection test against a URL | `/sqlmap https://example.com/page?id=1` |
+| `/ffuf <url>` | Run ffuf directory brute-force (place `FUZZ` in URL) | `/ffuf https://example.com/FUZZ` |
+| `/ask <prompt>` | Send a free-form prompt to the Venice AI abliterated model | `/ask "analyse these HTTP headers for vulnerabilities"` |
+| `/stop` | Send graceful shutdown signal to the MCP server | `/stop` |
+| `/results` | Retrieve the last tool output stored by the server | `/results` |
+| `/tor_check` | Confirm current exit IP via check.torproject.org | `/tor_check` |
+| `/newcircuit` | Request a new Tor exit node via NEWNYM signal | `/newcircuit` |
 
-on:
-  push:
-    branches: [main]
+### Example Interactions
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host:     ${{ secrets.VPS_HOST }}
-          username: hexstrike
-          key:      ${{ secrets.VPS_SSH_KEY }}
-          port:     22
-          script: |
-            set -e
-            cd ~/hexstrike-ai-dn
-            git pull origin main
-            source hexstrike_env/bin/activate
-            pip install -r requirements.txt --quiet
-            sudo systemctl restart hexstrike-server
-            sudo systemctl restart hexstrike-bot
-            sleep 5
-
-      - name: Health Check via Telegram Bot API
-        run: |
-          curl -s "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id="${{ secrets.TELEGRAM_AUTHORIZED_CHAT_ID }}" \
-            -d text="✅ HexStrike deployed — commit: ${{ github.sha }}" \
-            -d parse_mode="Markdown"
+**`/start`**
+```
+User: /start
+Bot:  🔴 HexStrike AI DN — Online
+      Server status: healthy
+      Tools loaded: 150+
+      Venice model: nous-hermes-2-mixtral-8x7b
+      Tor active: ✅
+      Exit IP: 185.220.101.47
 ```
 
-Add these repository secrets in GitHub → Settings → Secrets and variables → Actions:
-- `VPS_HOST` — your VPS IP or hostname
-- `VPS_SSH_KEY` — private SSH key (PEM format) for the `hexstrike` user
-- `TELEGRAM_BOT_TOKEN` — from `.env`
-- `TELEGRAM_AUTHORIZED_CHAT_ID` — from `.env`
+**`/scan 10.10.10.1`**
+```
+User: /scan 10.10.10.1
+Bot:  🔍 Scanning 10.10.10.1 ...
+      [60 seconds later]
+Bot:  PORT    STATE SERVICE VERSION
+      22/tcp  open  ssh     OpenSSH 7.9
+      80/tcp  open  http    Apache 2.4.38
+      443/tcp open  https   Apache 2.4.38
+```
+
+**`/ask "list SMB attack vectors"`**
+```
+User: /ask "list SMB attack vectors"
+Bot:  Common SMB attack vectors include:
+      1. EternalBlue (MS17-010) — unauthenticated RCE via SMBv1
+      2. Pass-the-Hash — relay captured NTLM hashes
+      3. SMB Relay attacks via Responder + ntlmrelayx
+      ...
+```
+
+**`/newcircuit`**
+```
+User: /newcircuit
+Bot:  🔄 New Tor circuit requested.
+```
 
 ---
 
-## 9. Running Tests
+## 10. Running Tests
 
-### Unit Tests
+### Test Venice AI Through Tor
+
+```bash
+source hexstrike_env/bin/activate
+torsocks curl -s "https://api.venice.ai/api/v1/models" \
+  -H "Authorization: Bearer $VENICE_API_KEY" \
+  | python3 -c "import sys,json; print('OK —', len(json.load(sys.stdin)['data']), 'models available')"
+# Expected: OK — N models available
+```
+
+### Test Telegram Bot Token
+
+```bash
+curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print('Bot:', d['result']['username'])"
+# Expected: Bot: hexstrike_op_bot
+```
+
+### Test a Single Tool Wrapper via MCP Server
+
+```bash
+source hexstrike_env/bin/activate
+curl -s -X POST http://127.0.0.1:8888/api/tools/nmap_scan \
+  -H "Content-Type: application/json" \
+  -d '{"target":"127.0.0.1","scan_type":"-sV","ports":"22,80"}' \
+  | python3 -m json.tool
+# Expected: JSON with scan results for localhost
+```
+
+### Send `/status` and Verify Full Stack
+
+1. Start both services (or tmux sessions)
+2. Send `/status` to the bot from Telegram
+3. Confirm the reply shows `Server: healthy` and `Tor: ✅ Active`
+
+### Run Unit Tests
 
 ```bash
 source hexstrike_env/bin/activate
@@ -1445,173 +1359,123 @@ tests/test_server.py::test_health_endpoint PASSED
 tests/test_tor.py::test_tor_routing PASSED
 tests/test_venice.py::test_venice_connection PASSED
 ...
-25 passed in 4.31s
+N passed in X.XXs
 ```
-
-### Test Venice AI Connectivity
-
-```bash
-source hexstrike_env/bin/activate
-python3 - <<'EOF'
-from venice_client import chat
-response = chat("Say: HexStrike online")
-print(response)
-EOF
-```
-
-Expected output:
-```
-HexStrike online
-```
-
-### Test Tor Routing
-
-```bash
-# Without Tor (baseline)
-curl -s https://check.torproject.org/api/ip | jq .IsTor
-# Expected: false
-
-# With Tor
-torsocks curl -s https://check.torproject.org/api/ip | jq .IsTor
-# Expected: true
-```
-
-### Test Telegram Bot Token
-
-```bash
-curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" | jq '.result | {id, username, first_name}'
-```
-
-Expected:
-```json
-{
-  "id": 123456789,
-  "username": "hexstrike_op_bot",
-  "first_name": "HexStrike Operator"
-}
-```
-
-### Full Integration Test
-
-1. Ensure `hexstrike_server.py` and `telegram_bot.py` are running
-2. Send `/scan 127.0.0.1` to the bot
-3. Verify the bot replies with nmap output for localhost within 60 seconds
-4. Check server logs:
-   ```bash
-   journalctl -u hexstrike-server --since "1 minute ago"
-   ```
-   Expected log line: `INFO Tool nmap_scan started — target 127.0.0.1`
 
 ---
 
-## 10. Common Issues & Troubleshooting
+## 11. Common Issues & Troubleshooting
 
 | Error / Symptom | Cause | Fix |
 |-----------------|-------|-----|
+| `[Errno 111] Connection refused` on port 9050 | Tor service not running | `sudo systemctl start tor && sudo systemctl enable tor` |
 | Venice AI returns `401 Unauthorized` | Invalid or missing `VENICE_API_KEY` | Verify `VENICE_API_KEY` in `.env`; regenerate the key at https://venice.ai |
-| Venice AI returns `model not found` | Abliterated model ID changed or deprecated | Run `curl https://api.venice.ai/api/v1/models -H "Authorization: Bearer $VENICE_API_KEY" \| jq '.data[].id'`; update `VENICE_MODEL` |
-| Bot not responding to any commands | Wrong `TELEGRAM_AUTHORIZED_CHAT_ID` or bot process not running | Verify chat ID with `getUpdates`; check `systemctl status hexstrike-bot` |
-| `ConnectionRefusedError` on port 9050 | Tor service not running | `sudo systemctl start tor && sudo systemctl enable tor` |
-| `torsocks: DNS leak detected` warning | `/etc/resolv.conf` points to non-Tor DNS | `echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf && sudo chattr +i /etc/resolv.conf` |
-| `ImportError: No module named 'mcp'` | `fastmcp` not installed inside the venv | `source hexstrike_env/bin/activate && pip install fastmcp` |
-| `ChromeDriver version mismatch` | Chromium and chromedriver versions differ | `sudo apt install --reinstall chromium-browser chromium-chromedriver` |
-| `OSError: [Errno 98] Address already in use` (port 8888) | Previous server instance still running | `fuser -k 8888/tcp` |
-| `ImportError: pwntools / bcrypt conflict` | `bcrypt` installed at wrong version | `pip install bcrypt==4.0.1 --force-reinstall` |
-| `nuclei: command not found` | Tool not installed or not in `$PATH` | Follow Section 2.6 Go tool install block; add `$HOME/go/bin` to `PATH` |
-| `stem.SocketError: Unable to connect to port 9051` | Tor control port not enabled | Add `ControlPort 9051` and `CookieAuthentication 1` to `/etc/tor/torrc`; `sudo systemctl restart tor` |
-| `Telegram getUpdates returns empty` | Bot never received a message | Send any message to the bot first, then retry `getUpdates` |
-| `aiohttp.ClientProxyConnectionError` | `aiohttp-socks` not installed | `pip install aiohttp-socks` |
+| Venice AI returns `403` or content filtered | Using a non-abliterated model | Switch `VENICE_MODEL` to `nous-hermes-2-mixtral-8x7b` or `dolphin-2.9-llama3-8b` |
+| Telegram bot not responding to any command | Wrong `BOT_TOKEN` or `ALLOWED_CHAT_ID` | Verify token: `curl "https://api.telegram.org/bot<TOKEN>/getMe"`; verify chat ID with `getUpdates` |
+| `ModuleNotFoundError: No module named 'mcp'` | fastmcp not installed in active venv | `source hexstrike_env/bin/activate && pip install fastmcp>=0.2.0` |
+| `torsocks: Can't connect to Tor` | torsocks misconfigured | Check `/etc/tor/torsocks.conf` — set `TorAddress 127.0.0.1` and `TorPort 9050` |
+| `OSError: [Errno 98] Address already in use` (port 8888) | Previous server instance still running | `kill $(lsof -t -i:8888)` |
+| pwntools install fails | Python version above 3.10 in the venv | Create a new venv with Python 3.10: `python3.10 -m venv hexstrike_env` |
+| `nuclei: command not found` | Nuclei binary not in `$PATH` | Run `go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest`; ensure `$GOPATH/bin` is in `PATH` |
+| Nuclei templates not found | Templates not downloaded | `nuclei -update-templates` |
+| DNS leak through Tor | Using `socks5://` instead of `socks5h://` | Replace all proxy strings with `socks5h://127.0.0.1:9050` in code and `.env` |
+| `stem.SocketError` on `/newcircuit` | Tor control port not enabled | Add `ControlPort 9051` and `CookieAuthentication 1` to `/etc/tor/torrc`; `sudo systemctl restart tor`; add user to `debian-tor` group: `sudo usermod -aG debian-tor hexstrike` |
+| Git clone fails — DNS resolution error | Tor DNS is routing before Tor is started | Temporarily restore DNS: `sudo chattr -i /etc/resolv.conf && echo "nameserver 8.8.8.8" \| sudo tee /etc/resolv.conf` |
 
 ---
 
-## 11. Project Structure
+## 12. Project Structure
 
 ```
 hexstrike-ai-dn/
-├── hexstrike_server.py          # Core MCP server — 150+ tool handlers, Flask REST API
-├── hexstrike_mcp.py             # MCP client bridge — FastMCP tool definitions for LLM agents
+├── hexstrike_server.py          # Main Flask+MCP server — 150+ security tool wrappers
+├── hexstrike_mcp.py             # MCP client — bridges AI agents to the server API
 ├── hexstrike-ai-mcp.json        # MCP server config (host, port, command, timeout)
 ├── requirements.txt             # Python dependencies (pinned versions)
 ├── telegram_bot.py              # Telegram C2 bot — command dispatcher, output relay
-├── venice_client.py             # Venice AI API wrapper — abliterated model calls, SOCKS5 proxy
-├── tor_manager.py               # Tor circuit control via stem — NEWNYM, IP check, DNS config
-├── .env                         # Runtime secrets — NEVER commit this file
-├── .env.example                 # Template for environment variables
+├── .env.example                 # Environment variable template — copy to .env
+├── .env                         # Runtime secrets — never commit this file
 ├── assets/
 │   └── hexstrike-logo.png       # Project logo
 ├── tests/
 │   ├── test_server.py           # Unit tests for Flask API endpoints
 │   ├── test_tor.py              # Tor routing and circuit renewal tests
-│   └── test_venice.py           # Venice AI connectivity and response tests
+│   └── test_venice.py           # Venice AI connectivity tests
 ├── systemd/
 │   ├── hexstrike-server.service # systemd unit file for MCP server
-│   └── hexstrike-bot.service    # systemd unit file for Telegram bot
+│   └── hexstrike-tgbot.service  # systemd unit file for Telegram bot
 └── scripts/
     ├── install_tools.sh         # Installs all 150+ external security tools
-    ├── tool_check.sh            # Verifies all tools are present and executable
-    └── deploy.sh                # VPS deployment: git pull, pip install, service restart
+    ├── tool_check.sh            # Verifies all tools are installed and in PATH
+    └── deploy.sh                # VPS deployment helper (pull, pip install, restart services)
 ```
 
 ---
 
-## 12. Scripts Reference
+## 13. Scripts Reference
 
 | Script / Command | Description |
 |------------------|-------------|
-| `python3 hexstrike_server.py` | Start the MCP server (plain, no Tor) |
-| `torsocks python3 hexstrike_server.py` | Start MCP server with all traffic routed through Tor |
+| `python3 hexstrike_server.py` | Start the HexStrike MCP HTTP server on port 8888 |
+| `python3 hexstrike_mcp.py --server http://127.0.0.1:8888` | Start MCP client connected to local server |
 | `python3 telegram_bot.py` | Start the Telegram C2 bot |
-| `bash scripts/install_tools.sh` | Install all 150+ external security tools (run once on fresh VPS) |
-| `bash scripts/tool_check.sh` | Verify all tools are installed and accessible in `$PATH` |
-| `bash scripts/deploy.sh` | Pull latest code, reinstall Python dependencies, restart systemd services |
-| `systemctl start hexstrike-server` | Start MCP server as a persistent system service |
-| `systemctl start hexstrike-bot` | Start Telegram bot as a persistent system service |
-| `systemctl stop hexstrike-server` | Stop the MCP server service |
-| `systemctl stop hexstrike-bot` | Stop the Telegram bot service |
-| `systemctl restart hexstrike-server` | Restart the MCP server (after config changes) |
-| `systemctl restart hexstrike-bot` | Restart the Telegram bot (after config changes) |
+| `torsocks python3 hexstrike_server.py` | Start MCP server with all traffic routed through Tor |
+| `torsocks nmap -sV <target>` | Run nmap through Tor |
+| `source hexstrike_env/bin/activate` | Activate Python 3.10 virtual environment |
+| `sudo systemctl restart tor` | Restart the Tor daemon |
+| `sudo systemctl restart hexstrike-server` | Restart MCP server systemd service |
+| `sudo systemctl restart hexstrike-tgbot` | Restart Telegram bot systemd service |
 | `journalctl -u hexstrike-server -f` | Tail live MCP server logs |
-| `journalctl -u hexstrike-bot -f` | Tail live Telegram bot logs |
-| `torsocks curl -s https://check.torproject.org/api/ip` | Confirm Tor is routing traffic |
-| `curl -s http://127.0.0.1:8888/health \| jq .` | Check MCP server health endpoint directly |
+| `journalctl -u hexstrike-tgbot -f` | Tail live Telegram bot logs |
+| `bash scripts/install_tools.sh` | Install all 150+ external security tools |
+| `bash scripts/tool_check.sh` | Verify all tools are installed and accessible in PATH |
+| `nuclei -update-templates` | Download/update Nuclei vulnerability templates |
+| `kill $(lsof -t -i:8888)` | Kill any process occupying port 8888 |
 
 ---
 
-## 13. Contributing
+## 14. Contributing
 
 1. Fork the repository and clone your fork:
    ```bash
    git clone https://github.com/<your-username>/hexstrike-ai-dn.git
    cd hexstrike-ai-dn
    ```
-2. Create a branch using the appropriate prefix:
-   - `feature/` — new capabilities or tools
-   - `fix/` — bug fixes
-   - `sec/` — security improvements or vulnerability patches
+
+2. Create a feature branch using the appropriate prefix:
    ```bash
-   git checkout -b feature/add-xxe-scanner
+   git checkout -b feat/your-feature-name
+   # or: fix/bug-description  |  sec/vulnerability-patch
    ```
-3. Make your changes inside an activated virtual environment
-4. Format and lint before committing:
+
+3. Make your changes inside an activated virtual environment (Python 3.10):
    ```bash
-   pip install black flake8
-   black .
+   python3.10 -m venv hexstrike_env
+   source hexstrike_env/bin/activate
+   pip install -r requirements.txt
+   ```
+
+4. Run linting before committing:
+   ```bash
+   pip install flake8
    flake8 . --max-line-length=120
    ```
-5. Confirm your changes pass the test suite:
+
+5. Never commit `.env` or any file containing API keys, tokens, or credentials. Confirm:
    ```bash
-   python3 -m pytest tests/ -v
+   grep -r "VENICE_API_KEY\|BOT_TOKEN" --include="*.py" .
+   # Must return no hardcoded values — only os.environ references
    ```
-6. Open a pull request against `main` with the following checklist completed:
-   - [ ] Tor routing tested — no DNS leaks, `IsTor: true` confirmed
-   - [ ] Venice AI model response tested — abliterated model responds correctly
-   - [ ] Telegram bot commands tested — affected commands produce expected output
-   - [ ] No secrets, API keys, or credentials in any committed file
-   - [ ] `black` and `flake8` pass with zero errors
+
+6. Open a pull request against `main` with the following checklist:
+   - [ ] Tor routing preserved — `USE_TOR=true` tested, no DNS leaks
+   - [ ] Venice AI model integration tested — abliterated model responds correctly
+   - [ ] No hardcoded secrets in any committed file
+   - [ ] Tested on Ubuntu 20.04 LTS over SSH
 
 ---
 
-## 14. License
+## 15. License
 
 ```
 MIT License
@@ -1641,7 +1505,7 @@ SOFTWARE.
 
 <div align="center">
 
-**HexStrike AI DN** · VPS Edition · Built for headless, Tor-anonymised, autonomous offensive operations
+**HexStrike AI DN** · Ubuntu 20.04 VPS Edition · Autonomous offensive security via Telegram + Venice AI + Tor
 
 *For authorised security testing only.*
 
