@@ -537,6 +537,8 @@ This file tells the MCP host (Venice AI agent or any OpenAI-compatible client) h
 
 **Corrected production configuration:**
 
+> **Note:** The path `/home/hexstrike/hexstrike-ai-dn/hexstrike_mcp.py` assumes the repository is cloned to the `hexstrike` user's home directory. If you use a different installation path, update this value accordingly in `hexstrike-ai-mcp.json`.
+
 ```json
 {
   "mcpServers": {
@@ -786,12 +788,17 @@ async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     result = mcp_post("api/tools/nmap_scan", {"target": target, "scan_type": "-sV", "ports": ""})
     # Truncate long output and send as file if needed
     if len(result) > 4000:
-        with open(f"/tmp/scan_{target.replace('.','_')}.txt", "w") as f:
+        # Sanitize target to prevent path traversal — allow only alphanumeric, dots, hyphens, colons
+        import re as _re
+        safe_target = _re.sub(r"[^a-zA-Z0-9.\-:]", "_", target)
+        out_path = f"/tmp/scan_{safe_target}.txt"
+        with open(out_path, "w") as f:
             f.write(result)
-        await update.message.reply_document(
-            document=open(f"/tmp/scan_{target.replace('.','_')}.txt", "rb"),
-            caption=f"Scan results for {target}"
-        )
+        with open(out_path, "rb") as fh:
+            await update.message.reply_document(
+                document=fh,
+                caption=f"Scan results for {target}"
+            )
     else:
         await update.message.reply_text(f"```\n{result[:4000]}\n```", parse_mode="Markdown")
 
@@ -835,9 +842,8 @@ async def cmd_ask(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Usage: /ask <your question>")
         return
     prompt = " ".join(ctx.args)
-    import requests as req
     proxies = get_proxies()
-    resp = req.post(
+    resp = requests.post(
         f"{os.environ.get('VENICE_API_BASE','https://api.venice.ai/api/v1')}/chat/completions",
         headers={"Authorization": f"Bearer {os.environ['VENICE_API_KEY']}"},
         json={
@@ -1038,9 +1044,9 @@ sudo systemctl restart tor
 At the top of `hexstrike_server.py`, after the existing imports, add:
 ```python
 # Load SOCKS5 proxy from environment when USE_TOR=true
-import os as _os
-if _os.environ.get("USE_TOR", "true").lower() == "true":
-    _tor_proxy = f"socks5h://{_os.environ.get('TOR_SOCKS_HOST','127.0.0.1')}:{_os.environ.get('TOR_SOCKS_PORT','9050')}"
+# os is already imported at the top of hexstrike_server.py
+if os.environ.get("USE_TOR", "true").lower() == "true":
+    _tor_proxy = f"socks5h://{os.environ.get('TOR_SOCKS_HOST','127.0.0.1')}:{os.environ.get('TOR_SOCKS_PORT','9050')}"
     _DEFAULT_PROXIES = {"http": _tor_proxy, "https": _tor_proxy}
 else:
     _DEFAULT_PROXIES = {}
