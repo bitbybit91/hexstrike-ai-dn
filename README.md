@@ -275,6 +275,8 @@ doctl compute droplet create hexstrike-vps \
   --size s-2vcpu-4gb \
   --region nyc3 \
   --ssh-keys $(doctl compute ssh-key list --format ID --no-header | head -1) \
+  # Note: head -1 selects the first key in your account. If you have multiple SSH keys,
+  # run `doctl compute ssh-key list` first and replace head -1 with the specific key ID.
   --wait
 ```
 
@@ -312,9 +314,8 @@ usermod -aG sudo hexstrike
 rsync --archive --chown=hexstrike:hexstrike ~/.ssh /home/hexstrike
 
 # 4. Disable password authentication and direct root login via SSH
-sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
-sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
-sed -i 's/#PermitRootLogin/PermitRootLogin/' /etc/ssh/sshd_config
+sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
 systemctl reload sshd
 
 # 5. Configure UFW — allow only SSH inbound; Tor SOCKS stays on loopback
@@ -348,10 +349,15 @@ SocksPort 127.0.0.1:9050
 DNSPort 127.0.0.1:53
 AutomapHostsOnResolve 1
 VirtualAddrNetworkIPv4 10.192.0.0/10
+# Control port — required for programmatic circuit renewal (/newcircuit command)
+ControlPort 9051
+CookieAuthentication 1
 Log notice file /var/log/tor/notices.log
 EOF
 sudo systemctl restart tor
 sudo systemctl enable tor
+# Add the hexstrike user to the debian-tor group so stem can authenticate
+sudo usermod -aG debian-tor hexstrike
 ```
 
 Verify Tor is routing traffic:
@@ -379,6 +385,11 @@ torsocks curl https://check.torproject.org/api/ip
 echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
 # Prevent NetworkManager / systemd-resolved from overwriting it
 sudo chattr +i /etc/resolv.conf
+# WARNING: The immutable flag prevents ALL tools and services from updating DNS settings.
+# To temporarily restore normal DNS (e.g., for system updates or network changes):
+#   sudo chattr -i /etc/resolv.conf
+#   echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+# Re-apply the Tor DNS redirect and immutable flag when done.
 ```
 
 Verify:
@@ -710,6 +721,8 @@ Install the additional bot dependencies:
 pip install python-telegram-bot==20.7 python-dotenv stem requests[socks]
 ```
 
+> These packages are not in `requirements.txt` (which covers the core MCP server). Add them to `requirements.txt` in your fork to pin the versions for reproducible deployments.
+
 ---
 
 ## 5. Venice AI Configuration
@@ -938,10 +951,11 @@ Common error:
 fatal: unable to access 'https://github.com/...': Could not resolve host: github.com
 ```
 Fix: DNS is probably pointing to `127.0.0.1` before Tor is running. Temporarily restore DNS:
+> **Warning:** This briefly exposes DNS queries to the public resolver. Perform this step before configuring Tor DNS, or on a non-sensitive network, and immediately re-apply Tor DNS after cloning.
 ```bash
 sudo chattr -i /etc/resolv.conf
 echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
-# After cloning, re-enable Tor DNS:
+# Clone the repository now, then re-enable Tor DNS:
 echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf && sudo chattr +i /etc/resolv.conf
 ```
 
